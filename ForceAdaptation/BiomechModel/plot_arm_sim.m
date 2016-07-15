@@ -1,4 +1,11 @@
-function plot_arm_sim(sd,params)
+function plot_arm_sim(sd,params,varargin)
+
+if nargin == 3 %provided tuning curve data
+    % will use this to sort the raster by cell PD
+    tc = varargin{1};
+else
+    tc = [];
+end
 
 if length(sd) > 1
     error('Only provide one trial, at least for now');
@@ -44,52 +51,57 @@ switch lower(params.type)
     case 'freeze_video'
         
         % build color gradient vector
-        plot_colors = [(0:1/size(sd.angles,1):1)', zeros(size(0:1/size(sd.angles,1):1))', (1:-1/size(sd.angles,1):0)'];
+        %plot_colors = [(0:1/size(sd.angles,1):1)', zeros(size(0:1/size(sd.angles,1):1))', (1:-1/size(sd.angles,1):0)'];
+        plot_colors = [(0:1/(params.idx_end-params.idx_start):1)', zeros(size(0:1/(params.idx_end-params.idx_start):1))', (1:-1/(params.idx_end-params.idx_start):0)'];
         
         figure;
-        for t = 1:params.resolution:size(sd.angles,1)
+        %for t = 1:params.resolution:size(sd.angles,1)
+        for t = params.idx_start:params.resolution:params.idx_end
             hold all;
             % plot circle at endpoint
-            plot(L1*cos(sd.angles(t,1)) + L2*cos(sd.angles(t,1)+sd.angles(t,2)),L1*sin(sd.angles(t,1)) + L2*sin(sd.angles(t,1)+sd.angles(t,2)),'o','LineWidth',3,'Color',plot_colors(t,:));
+            plot(L1*cos(sd.angles(t,1)) + L2*cos(sd.angles(t,1)+sd.angles(t,2)), L1*sin(sd.angles(t,1)) + L2*sin(sd.angles(t,1)+sd.angles(t,2)),'o','LineWidth',3,'Color',plot_colors(t-(params.idx_start-1),:));
             %plot(p(t,1),p(t,2),'o','LineWidth',2,'Color',plot_colors(t,:));
             
             % plot limb segments
-            plot([0,L1*cos(sd.angles(t,1))],[0,L1*sin(sd.angles(t,1))],'k-','LineWidth',2,'Color',plot_colors(t,:));
-            plot(L1*cos(sd.angles(t,1))+[0,L2*cos(sd.angles(t,1)+sd.angles(t,2))],L1*sin(sd.angles(t,1))+[0,L2*sin(sd.angles(t,1)+sd.angles(t,2))],'k-','LineWidth',2,'Color',plot_colors(t,:));
+            plot([0,L1*cos(sd.angles(t,1))],[0,L1*sin(sd.angles(t,1))],'k-','LineWidth',2,'Color',plot_colors(t-(params.idx_start-1),:));
+            plot(L1*cos(sd.angles(t,1))+[0,L2*cos(sd.angles(t,1)+sd.angles(t,2))], L1*sin(sd.angles(t,1))+[0,L2*sin(sd.angles(t,1)+sd.angles(t,2))],'k-','LineWidth',2,'Color',plot_colors(t-(params.idx_start-1),:));
         end
-        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.15,0.15],'YLim',[0 0.25]); axis('square');
-        set(gca,'YTickLabel',cellfun(@(x) str2num(x) - params.origin_pos(2)/100,get(gca,'YTickLabel')))
-        %set(gca,'XTickLabel',100*cellfun(@(x) str2num(x),get(gca,'XTickLabel')))
-        xlabel('X Position (m)','FontSize',14);
-        ylabel('Y Position (m)','FontSize',14);
+        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.25,0.25],'YLim',[0 0.31]); axis('square');
+        set(gca,'YTickLabel',cellfun(@(x) 100*(str2num(x) - params.origin_pos(2)/100),get(gca,'YTickLabel')))
+        set(gca,'XTickLabel',100*cellfun(@(x) str2num(x),get(gca,'XTickLabel')))
+        xlabel('X Position (cm)','FontSize',14);
+        ylabel('Y Position (cm)','FontSize',14);
         
         
     case 'time_signals'
         
         t = params.dt*(1:size(p,1))';
-        figure;
+        figure('Position',[200 200 600 600]);
         for i = 1:length(params.signals)
-            subplot(length(params.signals),1,i);
             if strcmpi(params.signals{i},'muscles') % normalize muscle activations
+                subplot(length(params.signals)+1,1,i);
                 plot(repmat(t,1,size(sd.(params.signals{i}),2)),sd.(params.signals{i})./repmat(params.M_max,size(sd.(params.signals{i}),1),1),'LineWidth',2);
             elseif length(params.signals{i}) > 6 && strcmpi(params.signals{i}(end-6:end),'neurons') % do raster
-                imagesc(t-params.dt/2,1:params.num_neurons,sd.(params.signals{i})');
+                subplot(length(params.signals)+1,1,i:i+1);
+                if ~isempty(tc) % sort by PD
+                    pds = tc(1).muscle.tc(:,3);
+                    [~,I] = sort(pds);
+                else
+                    I = 1:params.num_neurons;
+                end
+                imagesc(t-params.dt/2,1:params.num_neurons,sd.(params.signals{i})(:,I)',[0 5]);
                 %plot(t+params.dt/2,sd.(params.signals{i}));
             else % just plot it
+                subplot(length(params.signals)+1,1,i);
                 plot(repmat(t,1,size(sd.(params.signals{i}),2)),sd.(params.signals{i}),'LineWidth',2);
             end
             axis('tight');
             set(gca,'Box','off','TickDir','out','FontSize',14);
             ylabel(params.signals{i},'FontSize',14);
+            
+            set(gca,'XLim',[params.idx_start,params.idx_end].*params.dt);
         end
         xlabel('Time (sec)','FontSize',14);
-        
-        
-        
-        
-        
-        
-        
         
     otherwise
         error('Type not recognized');

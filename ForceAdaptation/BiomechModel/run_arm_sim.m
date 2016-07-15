@@ -3,28 +3,29 @@ clear;
 clc;
 
 filenames = { ...
-        'Chewie_CO_FF_2013-10-22', ...
-        'Chewie_CO_FF_2013-10-23', ...
-        'Chewie_CO_FF_2013-10-31', ...
-        'Chewie_CO_FF_2013-11-01', ...
-        'Chewie_CO_FF_2013-12-03', ...
-        'Chewie_CO_FF_2013-12-04', ...
-        'Chewie_CO_FF_2015-06-29', ...
-    'Chewie_CO_FF_2015-06-30', ...
+    %         'Chewie_CO_FF_2013-10-22', ...
+    %         'Chewie_CO_FF_2013-10-23', ...
+    %         'Chewie_CO_FF_2013-10-31', ...
+    %         'Chewie_CO_FF_2013-11-01', ...
+    %         'Chewie_CO_FF_2013-12-03', ...
+    %         'Chewie_CO_FF_2013-12-04', ...
     'Chewie_CO_FF_2015-07-01', ...
-    'Chewie_CO_FF_2015-07-03', ...
-    'Chewie_CO_FF_2015-07-06', ...
-    'Chewie_CO_FF_2015-07-07', ...
-    'Chewie_CO_FF_2015-07-08', ...
-    'Mihili_CO_FF_2014-02-17', ...
-    'Mihili_CO_FF_2014-02-18', ...
-    'Mihili_CO_FF_2014-03-07', ...
-    'Mihili_CO_FF_2015-06-10', ...
-    'Mihili_CO_FF_2015-06-11', ...
-    'Mihili_CO_FF_2015-06-15', ...
-    'Mihili_CO_FF_2015-06-16', ...
-    'Mihili_CO_FF_2014-02-03', ...
-    'Mihili_CO_FF_2015-06-17'};
+    %         'Chewie_CO_FF_2015-07-03', ...
+    %         'Mihili_CO_FF_2014-02-03', ...
+    %         'Mihili_CO_FF_2014-02-17', ...
+    %         'Mihili_CO_FF_2014-02-18', ...
+    %         'Mihili_CO_FF_2014-03-07', ...
+    %         'Mihili_CO_FF_2015-06-11', ...
+    %         'Mihili_CO_FF_2015-06-17', ...
+    %         'Chewie_CO_FF_2015-06-29', ...
+    %         'Chewie_CO_FF_2015-06-30', ...
+    %         'Chewie_CO_FF_2015-07-06', ...
+    %         'Chewie_CO_FF_2015-07-07', ...
+    %         'Chewie_CO_FF_2015-07-08', ...
+    %         'Mihili_CO_FF_2015-06-10', ...
+    %         'Mihili_CO_FF_2015-06-15', ...
+    %         'Mihili_CO_FF_2015-06-16', ...
+    };
 
 for iFile = 1:length(filenames)
     
@@ -55,20 +56,20 @@ for iFile = 1:length(filenames)
             M2 = 25.2*body_weight/1000;
             L1 = 0.19;
             L2 = 0.22;
-%             M1 = 0.7; % mass of upper arm in kg
-%             M2 = 0.7; % mass of lower arm in kg
-%             L1 = 0.17; % length of upper arm in m
-%             L2 = 0.17; % length of lower arm in m
+            %             M1 = 0.7; % mass of upper arm in kg
+            %             M2 = 0.7; % mass of lower arm in kg
+            %             L1 = 0.17; % length of upper arm in m
+            %             L2 = 0.17; % length of lower arm in m
         case 'mihili'
             body_weight = 8.8;
             M1 = 34.4*body_weight/1000;
             M2 = 25.2*body_weight/1000;
             L1 = 0.17;
             L2 = 0.20;
-%             M1 = 0.55; % mass of upper arm in kg
-%             M2 = 0.55; % mass of lower arm in kg
-%             L1 = 0.14; % length of upper arm in m
-%             L2 = 0.14; % length of lower arm in m
+            %             M1 = 0.55; % mass of upper arm in kg
+            %             M2 = 0.55; % mass of lower arm in kg
+            %             L1 = 0.14; % length of upper arm in m
+            %             L2 = 0.14; % length of lower arm in m
     end
     
     TH_1_min = 0;  % minimum shoulder angle
@@ -82,17 +83,17 @@ for iFile = 1:length(filenames)
     muscle_d = [0.02, 0.02, 0.02, 0.02]; % 2cm insertion distance
     
     %%% neural activity model
-    num_neurons = 50;
+    num_neurons = 100;
     muscle_gains = [1,1,1,1]; % gain terms for [sh flex, sh ext, el flex, el ext]
-    use_synergy = false; % use "synergies" (e.g. only flexors or extensors)
+    use_muscle_model = 'all'; %'single','joint','synergy','all'
     mean_lag = 10; % mean lag in bins, will be shifted before tuning
     std_lag = 3; % how many bins of standard deviation
     
     
     % build params struct
     params = struct('use_models',{use_models},'do_poisson',do_poisson,'pos_offset',pos_offset,'origin_pos',origin_pos,'dt',dt,'M1',M1,'M2',M2,'L1',L1,'L2',L2, ...
-        'muscle_d',muscle_d,'num_neurons',num_neurons,'muscle_gains',muscle_gains,'use_synergy',use_synergy,'mean_lag',mean_lag,'std_lag',std_lag);
-
+        'muscle_d',muscle_d,'num_neurons',num_neurons,'muscle_gains',muscle_gains,'use_muscle_model',use_muscle_model,'mean_lag',mean_lag,'std_lag',std_lag);
+    
     
     %% Make Washout into Baseline
     % % % idx = strcmpi({trial_data.epoch},'WO');
@@ -126,7 +127,7 @@ for iFile = 1:length(filenames)
     
     cf_errs_diff = [0, cumsum(diff(cf_errs))];
     
-    cf_direction = sign(trial_data(idx(1)).perturbation_info(1));
+    cf_direction = sign(trial_data(idx(1)).perturbation_info(2));
     
     %% loop along trials and do modeling
     disp('Calculating kinematics and dynamics...');
@@ -174,7 +175,7 @@ for iFile = 1:length(filenames)
         %%% calculate curl field force vector
         Fc = zeros(size(v,1),2);
         for t = 1:size(v,1)
-            Fc(t,:) = 100 * K * [cos(TH_c)*v(t,1) - sin(TH_c)*v(t,2), sin(TH_c)*v(t,1) + cos(TH_c) * v(t,2)];
+            Fc(t,:) = 100 * K * [cos(TH_c)*v(t,1) + sin(TH_c)*v(t,2), sin(TH_c)*v(t,1) - cos(TH_c) * v(t,2)];
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -195,15 +196,6 @@ for iFile = 1:length(filenames)
         T_plan = zeros(size(ddth,1),2);
         T_force = zeros(size(ddth,1),2);
         for t = 1:size(ddth,1)
-            
-            % build vector for X force
-            fxTerms = [L1*sin(th(t,1)) + L2*sin(th(t,1)+th(t,2)); ...
-                L2*sin(th(t,1) + th(t,2))];
-            
-            % build vector for Y force
-            fyTerms = [L1*cos(th(t,1)) + L2*cos(th(t,1)+th(t,2)); ...
-                L2*cos(th(t,1) + th(t,2))];
-            
             if 1
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % build matrix of inertial terms
@@ -214,23 +206,27 @@ for iFile = 1:length(filenames)
                     B*sin(th(t,2))*dth(t,1),  0];
                 
                 % compute torques for this time
-                T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' - fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
+                %T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' - fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
+                forceTorques1 = cross([p(t,:),0],[Fc(t,:),0]); % shoulder torque
+                forceTorques2 = cross([p(t,:)-[L1*cos(th(t,1)), L1*sin(th(t,1))],0],[Fc(t,:),0]); % elbow torque
+                
+                T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' + [forceTorques1(3);forceTorques2(3)];
+                
                 T_plan(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)';
+                T_force(t,:) = [forceTorques1(3),forceTorques2(3)];
             else
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % THIS METHOD ASSUMES SAME MASS AND LENGTH
-                T(t,1) = (1/2*M1*L1^2) * ( ddth(t,1)*2*(5/3 + cos(th(t,2))) + ddth(t,2)*(2/3 + cos(th(t,2))) + sin(th(t,2))*dth(t,2)*(2*dth(t,1)+dth(t,2)) );
-                T(t,2) = (1/2*M2*L2^2) * ( ddth(t,1)*(2/3 + cos(th(t,2))) + ddth(t,2)*2/3 + sin(th(t,2))*(dth(t,1)^2) );
+                % % % %                 T(t,1) = (1/2*M1*L1^2) * ( ddth(t,1)*2*(5/3 + cos(th(t,2))) + ddth(t,2)*(2/3 + cos(th(t,2))) + sin(th(t,2))*dth(t,2)*(2*dth(t,1)+dth(t,2)) );
+                % % % %                 T(t,2) = (1/2*M2*L2^2) * ( ddth(t,1)*(2/3 + cos(th(t,2))) + ddth(t,2)*2/3 + sin(th(t,2))*(dth(t,1)^2) );
+                % % % %
+                % % % %                 T_force(t,:) = -fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
+                % % % %
+                % % % %                 T_plan(t,:) = T(t,:);
+                % % % %                 T(t,:) = T(t,:) + T_force(t,:);
             end
-
-            
-            T_force(t,:) = -fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
-            
-            T_plan(t,:) = T(t,:);
-            T(t,:) = T(t,:) + T_force(t,:);
-            
         end
-
+        
         sim_data(iTrial).kin.real.pos = p;
         sim_data(iTrial).kin.real.vel = v;
         sim_data(iTrial).torques = T;
@@ -240,66 +236,66 @@ for iFile = 1:length(filenames)
         sim_data(iTrial).kin.real.dangles = dth;
         sim_data(iTrial).kin.real.ddangles = ddth;
         
-        % This is complicated... here's the goal:
-        %   Find the kinematic trajectory (velocity) with NO curl field that
-        %   gives the observed trajectory WITH a curl field
-        %%%%%%%%%
-        T = T_plan;
-        v = zeros(size(dth,1),2);
-        ddth = zeros(size(T,1),2);
-        dth = zeros(size(T,1)+1,2);
-        th = zeros(size(T,1)+1,2);
-        dth(1,:) = sim_data(iTrial).kin.real.dangles(1,:);
-        th(1,:) = sim_data(iTrial).kin.real.angles(1,:);
-        for t = 1:size(T,1)
-            
-            % use Jacobian to get endpoint velocities from
-            % angular kinematics
-            J = [-L1*sin(th(t,1))-L2*sin(th(t,1) + th(t,2)), -L2*sin(th(t,1)+th(t,2)); L1*cos(th(t,1))+L2*cos(th(t,1)+th(t,2)), L2*cos(th(t,1)+th(t,2))];
-            v(t,:) = J*[dth(t,1);dth(t,2)];
-            
-            % compute angular acceleration
-            T1p = T(t,1)/(1/2*M1*L1^2) + sin(th(t,2))*dth(t,2)*(2*dth(t,1) + dth(t,2));
-            T2p = T(t,2)/(1/2*M2*L2^2) - sin(th(t,2))*dth(t,1)*dth(t,1);
-            
-            ddth(t,1) = ( 2/3*T1p - (2/3+cos(th(t,2)))*T2p )/(16/9  - (cos(th(t,2)))^2);
-            ddth(t,2) = ( -(2/3 + cos(th(t,2)))*T1p + 2*(5/3 + cos(th(t,2)))*T2p ) / (16/9 - (cos(th(t,2)))^2);
-            
-            dth(t+1,1) = dth(1,1) + trapz(ddth(1:t,1))*dt;
-            dth(t+1,2) = dth(1,2) + trapz(ddth(1:t,2))*dt;
-            th(t+1,1) = th(1,1) + trapz(dth(1:t,1))*dt;
-            th(t+1,2) = th(1,2) + trapz(dth(1:t,2))*dt;
-        end
-        
-        th = th(1:end-1,:);
-        dth = dth(1:end-1,:);
-        
-        p = cumtrapz(v,1)*dt;
-        
-        sim_data(iTrial).kin.plan.pos = p;
-        sim_data(iTrial).kin.plan.vel = v;
-        sim_data(iTrial).kin.plan.angles = th;
-        sim_data(iTrial).kin.plan.dangles = dth;
-        sim_data(iTrial).kin.plan.ddangles = ddth;
-        
-        
-        % if it's a curl field trial, get error
-        if strcmpi(trial_data(iTrial).epoch,'AD')
-            cf_count = cf_count + 1;
-            curr_err = cf_errs_diff(cf_count);
-            % rotate velocity trace
-            R = [cos(curr_err), -sin(curr_err); ...
-                sin(curr_err), cos(curr_err)];
-            v_plan = zeros(size(v));
-            for t = 1:size(ddth,1)
-                v_plan(t,:) = R*[v(t,1); v(t,2)];
-            end
-            
-        else
-            v_plan = v;
-        end
-        
-        sim_data(iTrial).kin.reaim.vel = v_plan;
+        % % %         % This is complicated... here's the goal:
+        % % %         %   Find the kinematic trajectory (velocity) with NO curl field that
+        % % %         %   gives the observed trajectory WITH a curl field
+        % % %         %%%%%%%%%
+        % % %         T = T_plan;
+        % % %         v = zeros(size(dth,1),2);
+        % % %         ddth = zeros(size(T,1),2);
+        % % %         dth = zeros(size(T,1)+1,2);
+        % % %         th = zeros(size(T,1)+1,2);
+        % % %         dth(1,:) = sim_data(iTrial).kin.real.dangles(1,:);
+        % % %         th(1,:) = sim_data(iTrial).kin.real.angles(1,:);
+        % % %         for t = 1:size(T,1)
+        % % %
+        % % %             % use Jacobian to get endpoint velocities from
+        % % %             % angular kinematics
+        % % %             J = [-L1*sin(th(t,1))-L2*sin(th(t,1) + th(t,2)), -L2*sin(th(t,1)+th(t,2)); L1*cos(th(t,1))+L2*cos(th(t,1)+th(t,2)), L2*cos(th(t,1)+th(t,2))];
+        % % %             v(t,:) = J*[dth(t,1);dth(t,2)];
+        % % %
+        % % %             % compute angular acceleration
+        % % %             T1p = T(t,1)/(1/2*M1*L1^2) + sin(th(t,2))*dth(t,2)*(2*dth(t,1) + dth(t,2));
+        % % %             T2p = T(t,2)/(1/2*M2*L2^2) - sin(th(t,2))*dth(t,1)*dth(t,1);
+        % % %
+        % % %             ddth(t,1) = ( 2/3*T1p - (2/3+cos(th(t,2)))*T2p )/(16/9  - (cos(th(t,2)))^2);
+        % % %             ddth(t,2) = ( -(2/3 + cos(th(t,2)))*T1p + 2*(5/3 + cos(th(t,2)))*T2p ) / (16/9 - (cos(th(t,2)))^2);
+        % % %
+        % % %             dth(t+1,1) = dth(1,1) + trapz(ddth(1:t,1))*dt;
+        % % %             dth(t+1,2) = dth(1,2) + trapz(ddth(1:t,2))*dt;
+        % % %             th(t+1,1) = th(1,1) + trapz(dth(1:t,1))*dt;
+        % % %             th(t+1,2) = th(1,2) + trapz(dth(1:t,2))*dt;
+        % % %         end
+        % % %
+        % % %         th = th(1:end-1,:);
+        % % %         dth = dth(1:end-1,:);
+        % % %
+        % % %         p = cumtrapz(v,1)*dt;
+        % % %
+        % % %         sim_data(iTrial).kin.plan.pos = p;
+        % % %         sim_data(iTrial).kin.plan.vel = v;
+        % % %         sim_data(iTrial).kin.plan.angles = th;
+        % % %         sim_data(iTrial).kin.plan.dangles = dth;
+        % % %         sim_data(iTrial).kin.plan.ddangles = ddth;
+        % % %
+        % % %
+        % % %         % if it's a curl field trial, get error
+        % % %         if strcmpi(trial_data(iTrial).epoch,'AD')
+        % % %             cf_count = cf_count + 1;
+        % % %             curr_err = cf_errs_diff(cf_count);
+        % % %             % rotate velocity trace
+        % % %             R = [cos(curr_err), -sin(curr_err); ...
+        % % %                 sin(curr_err), cos(curr_err)];
+        % % %             v_plan = zeros(size(v));
+        % % %             for t = 1:size(ddth,1)
+        % % %                 v_plan(t,:) = R*[v(t,1); v(t,2)];
+        % % %             end
+        % % %
+        % % %         else
+        % % %             v_plan = v;
+        % % %         end
+        % % %
+        % % %         sim_data(iTrial).kin.reaim.vel = v_plan;
         
         % % %     Alternative means of doing forward dynamics
         % % %             % get center of mass for current state of arm
@@ -324,6 +320,7 @@ for iFile = 1:length(filenames)
     
     %% Calculate muscle activations
     disp('Calculating muscle activations...');
+    
     for iTrial = 1:length(trial_data)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % calculate muscle activations
@@ -373,121 +370,135 @@ for iFile = 1:length(filenames)
         um = use_models{iModel};
         
         if strcmpi(um(1:3),'kin')
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % generate neurons from kinematic model
-            disp('Generating firing rates from kinematics...');
-            fr_gain = 100;
-            tc_gain = [0.2 1 1 1];
-            
-            % use moran and schwartz 1999 JNP model
-            %   parameters are: [b0,bn,bx,by]
-            
-            tc = zeros(num_neurons,size(tc_gain,2));
-            for unit = 1:num_neurons
-                % generate random tuning curve
-                tc(unit,1) = tc_gain(1) .* rand;
-                tc(unit,2) = tc_gain(2) .* rand;
-                % in this model, bx and by can be - or +
-                tc(unit,3) = tc_gain(3) .* (-1 + 2*rand);
-                tc(unit,4) = tc_gain(4) .* (-1 + 2*rand);
-            end
-            
-            for iTrial = 1:length(sim_data)
-                % assume each label begins with 'kin_'
-                v = sim_data(iTrial).kin.(um(5:end)).vel;
-                v_mag = hypot(v(:,1),v(:,2));
-                
-                fr = zeros(size(sim_data(iTrial).torques,1),num_neurons);
-                for unit = 1:num_neurons
-                    temp = fr_gain * (tc(unit,1) + ...
-                        tc(unit,2) .* v_mag + ...
-                        tc(unit,3) .* v(:,1) + ...
-                        tc(unit,4) .* v(:,2));
-                    
-                    temp(temp < 0) = 0;
-                    
-                    if do_poisson
-                        fr(:,unit) = poissrnd(temp);
-                    else
-                        fr(:,unit) = temp;
-                    end
-                end
-                
-                sim_data(iTrial).([um '_neurons']) = fr;
-            end
+            error('kin is outdated. needs updating.');
+            %             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %             % generate neurons from kinematic model
+            %             disp('Generating firing rates from kinematics...');
+            %             fr_gain = 100;
+            %             tc_gain = [0.2 1 1 1];
+            %
+            %             % use moran and schwartz 1999 JNP model
+            %             %   parameters are: [b0,bn,bx,by]
+            %
+            %             tc = zeros(num_neurons,size(tc_gain,2));
+            %             for unit = 1:num_neurons
+            %                 % generate random tuning curve
+            %                 tc(unit,1) = tc_gain(1) .* rand;
+            %                 tc(unit,2) = tc_gain(2) .* rand;
+            %                 % in this model, bx and by can be - or +
+            %                 tc(unit,3) = tc_gain(3) .* (-1 + 2*rand);
+            %                 tc(unit,4) = tc_gain(4) .* (-1 + 2*rand);
+            %             end
+            %
+            %             for iTrial = 1:length(sim_data)
+            %                 % assume each label begins with 'kin_'
+            %                 v = sim_data(iTrial).kin.(um(5:end)).vel;
+            %                 v_mag = hypot(v(:,1),v(:,2));
+            %
+            %                 fr = zeros(size(sim_data(iTrial).torques,1),num_neurons);
+            %                 for unit = 1:num_neurons
+            %                     temp = fr_gain * (tc(unit,1) + ...
+            %                         tc(unit,2) .* v_mag + ...
+            %                         tc(unit,3) .* v(:,1) + ...
+            %                         tc(unit,4) .* v(:,2));
+            %
+            %                     temp(temp < 0) = 0;
+            %
+            %                     if do_poisson
+            %                         fr(:,unit) = poissrnd(temp);
+            %                     else
+            %                         fr(:,unit) = temp;
+            %                     end
+            %                 end
+            %
+            %                 sim_data(iTrial).([um '_neurons']) = fr;
+            %             end
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % generate neurons from torque model
         elseif strcmpi(um,'torque')
-            disp('Generating firing rates from joint torques...');
-            fr_gain = 100;
-            tc_gain = [0.2 1 1 1 1];
-            
-            % linear combination of all muscles
-            tc = zeros(num_neurons,size(tc_gain,2));
-            for unit = 1:num_neurons
-                % tc(unit,:) = tc_gain .* rand(1,size(tc_gain,2));
-                % tc(unit,randi(size(tc_gain,2)-1)+1) = 1; % for one torque only
-                tc(unit,1) = tc_gain(1) .* rand(1);
-                tc(unit,2:end) = tc_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1)); % for negative values
-            end
-            for iTrial = 1:length(sim_data)
-                % Get temporary matrix separating torques for flexion/extension
-                temp_T = zeros(size(sim_data(iTrial).torques,1),4);
-                % shoulder flexion
-                idx = sim_data(iTrial).torques(:,1) > 0;
-                temp_T(idx,1) = sim_data(iTrial).torques(idx,1)./T_max(1);
-                % shoulder extension
-                idx = sim_data(iTrial).torques(:,1) < 0;
-                temp_T(idx,2) = abs(sim_data(iTrial).torques(idx,1)./T_min(1));
-                % elbow flexion
-                idx = sim_data(iTrial).torques(:,2) > 0;
-                temp_T(idx,3) = sim_data(iTrial).torques(idx,2)./T_max(2);
-                % elbow extension
-                idx = sim_data(iTrial).torques(:,2) < 0;
-                temp_T(idx,4) = abs(sim_data(iTrial).torques(idx,2)./T_min(2));
-                
-                fr = zeros(size(sim_data(iTrial).torques,1),num_neurons);
-                for unit = 1:num_neurons
-                    temp = fr_gain * (tc(unit,1) + sum(repmat(tc(unit,2:end),size(sim_data(iTrial).torques,1),1) .* temp_T,2));
-                    temp(temp < 0) = 0;
-                    if do_poisson
-                        fr(:,unit) = poissrnd(temp);
-                    else
-                        fr(:,unit) = temp;
-                    end
-                end
-                sim_data(iTrial).([um '_neurons']) = fr;
-            end
-            
+            error('torque is outdated. needs updating');
+            %             disp('Generating firing rates from joint torques...');
+            %             fr_gain = 100;
+            %             tc_gain = [0.2 1 1 1 1];
+            %
+            %             % linear combination of all muscles
+            %             tc = zeros(num_neurons,size(tc_gain,2));
+            %             for unit = 1:num_neurons
+            %                 % tc(unit,:) = tc_gain .* rand(1,size(tc_gain,2));
+            %                 % tc(unit,randi(size(tc_gain,2)-1)+1) = 1; % for one torque only
+            %                 tc(unit,1) = tc_gain(1) .* rand(1);
+            %                 tc(unit,2:end) = tc_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1)); % for negative values
+            %             end
+            %             for iTrial = 1:length(sim_data)
+            %                 % Get temporary matrix separating torques for flexion/extension
+            %                 temp_T = zeros(size(sim_data(iTrial).torques,1),4);
+            %                 % shoulder flexion
+            %                 idx = sim_data(iTrial).torques(:,1) > 0;
+            %                 temp_T(idx,1) = sim_data(iTrial).torques(idx,1)./T_max(1);
+            %                 % shoulder extension
+            %                 idx = sim_data(iTrial).torques(:,1) < 0;
+            %                 temp_T(idx,2) = abs(sim_data(iTrial).torques(idx,1)./T_min(1));
+            %                 % elbow flexion
+            %                 idx = sim_data(iTrial).torques(:,2) > 0;
+            %                 temp_T(idx,3) = sim_data(iTrial).torques(idx,2)./T_max(2);
+            %                 % elbow extension
+            %                 idx = sim_data(iTrial).torques(:,2) < 0;
+            %                 temp_T(idx,4) = abs(sim_data(iTrial).torques(idx,2)./T_min(2));
+            %
+            %                 fr = zeros(size(sim_data(iTrial).torques,1),num_neurons);
+            %                 for unit = 1:num_neurons
+            %                     temp = fr_gain * (tc(unit,1) + sum(repmat(tc(unit,2:end),size(sim_data(iTrial).torques,1),1) .* temp_T,2));
+            %                     temp(temp < 0) = 0;
+            %                     if do_poisson
+            %                         fr(:,unit) = poissrnd(temp);
+            %                     else
+            %                         fr(:,unit) = temp;
+            %                     end
+            %                 end
+            %                 sim_data(iTrial).([um '_neurons']) = fr;
+            %             end
+            %
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % generate neurons from muscle model
         elseif strcmpi(um,'muscle')
             disp('Generating firing rates from muscle activity...');
-            fr_gain = 100;
-            tc_gain = [0.2 1 1 1 1];
-            %     tc_gain = [0.17 0.7 0.4 0.7 0.4];
+            
+            tc_gain = [0.06 1 1 1 1]; % OPTION 2 (ALSO CHANGE FR_GAIN)
             
             % linear combination of all muscles
             tc = zeros(num_neurons,size(tc_gain,2));
             unit_lag = zeros(1,num_neurons);
             for unit = 1:num_neurons
-                if use_synergy % pick flexors OR extensors
-                    if rand > 0.5 % flexors
-                        temp_gain = tc_gain .* [1 1 0 1 0];
-                    else % extensors
-                        temp_gain = tc_gain .* [1 0 1 0 1];
-                    end
-                    tc(unit,1) = temp_gain(1) .* rand(1);
-                    tc(unit,2:end) = temp_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1));
-                else % select from all muscles equally
-                    tc(unit,1) = tc_gain(1) .* rand(1);
-                    tc(unit,2:end) = tc_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1));
-                    %                 tc(unit,randi(size(tc_gain,2)-1)+1) = 1; % modeled to be predominantly one muscle
+                switch lower(use_muscle_model)
+                    case 'synergy' % pick flexors OR extensors
+                        if rand > 0.5 % flexors
+                            temp_gain = tc_gain .* [1 1 0 1 0];
+                        else % extensors
+                            temp_gain = tc_gain .* [1 0 1 0 1];
+                        end
+                        tc(unit,1) = temp_gain(1) .* rand(1);
+                        tc(unit,2:end) = temp_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1));
+                    case 'joint'
+                        if rand > 0.5 % shoulder
+                            temp_gain = tc_gain .* [1 1 1 0 0];
+                        else % elbow
+                            temp_gain = tc_gain .* [1 0 0 1 1];
+                        end
+                        tc(unit,1) = temp_gain(1) .* rand(1);
+                        tc(unit,2:end) = temp_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1));
+                    case 'single'
+                        tc(unit,1) = tc_gain(1) .* rand(1);
+                        m_idx = randi(4);
+                        tc(unit,m_idx+1) = tc_gain(m_idx+1)*rand(1);
+                    otherwise % select from all muscles equally
+                        tc(unit,1) = tc_gain(1) .* rand(1);
+                        tc(unit,2:end) = tc_gain(2:end) .* (-1 + 2.*rand(1,size(tc_gain,2)-1));
                 end
                 
                 % get a random unit-specific lag
-                unit_lag(unit) = floor(normrnd(mean_lag,std_lag));
+                %unit_lag(unit) = floor(normrnd(mean_lag,std_lag));
+                unit_lag(unit) = randi([mean_lag-std_lag,mean_lag+std_lag],1);
                 
             end
             
@@ -496,16 +507,24 @@ for iFile = 1:length(filenames)
             for iTrial = 1:length(sim_data)
                 fr = zeros(size(sim_data(iTrial).torques,1),num_neurons);
                 for unit = 1:num_neurons
-                    
-                    temp = fr_gain * (tc(unit,1) + sum(repmat(tc(unit,2:end),size(sim_data(iTrial).torques,1),1) .* (sim_data(iTrial).muscles./repmat(M_max,size(sim_data(iTrial).torques,1),1)),2));
-                    temp(temp < 0) = 0;
-                    
-                    %shift neural data back by lags and pad with zeros
-                    temp = [temp(unit_lag(unit)+1:end); zeros(unit_lag(unit),1)];
-                    
                     if do_poisson
+                        fr_gain = 4;
+                        
+                        temp = 2*tc(unit,1) + fr_gain * (sum(repmat(tc(unit,2:end),size(sim_data(iTrial).torques,1),1) .* (sqrt(sim_data(iTrial).muscles)./repmat(M_max,size(sim_data(iTrial).torques,1),1)),2));
+                        % put cap at 1 and floor at 0
+                        temp(temp < 0) = 0;
+                        temp(temp > 1) = 1;
+                        
+                        %shift neural data back by lags and pad with zeros
+                        temp = [temp(unit_lag(unit)+1:end); zeros(unit_lag(unit),1)];
                         fr(:,unit) = poissrnd(temp);
                     else
+                        fr_gain = 100;
+                        temp = fr_gain * (tc(unit,1) + sum(repmat(tc(unit,2:end),size(sim_data(iTrial).torques,1),1) .* (sim_data(iTrial).muscles./repmat(M_max,size(sim_data(iTrial).torques,1),1)),2));
+                        temp(temp < 0) = 0;
+                        
+                        %shift neural data back by lags and pad with zeros
+                        temp = [temp(unit_lag(unit)+1:end); zeros(unit_lag(unit),1)];
                         fr(:,unit) = temp;
                     end
                 end
@@ -525,7 +544,9 @@ for iFile = 1:length(filenames)
 end
 
 %% Plot the simulation
-if 0
+if 1
+    %     close all;
+    params.dt = dt;
     params.M1 = M1; % mass of upper arm in kg
     params.M2 = M2; % mass of lower arm in kg
     params.L1 = L1; % length of upper arm in m
@@ -541,13 +562,20 @@ if 0
     params.T_min = T_min;
     params.num_neurons = num_neurons;
     
-    % params.type = 'time_signals';
     params.type = 'time_signals';
-    params.resolution = 1;
-    params.signals = {'vel','muscles','kin_real_neurons','muscle_neurons'};
+    % params.type = 'freeze_video';
+    params.resolution = 3;
+    params.signals = {'vel','torques','muscles','muscle_neurons'};
     params.kin_model = 'real';
     
     
-    iTrial = 3;
-    plot_arm_sim(sim_data(iTrial),params);
+    idx = [6, 312];
+    
+    for iTrial = idx
+        params.idx_start = trial_data(iTrial).idx_target_on;
+        params.idx_end = trial_data(iTrial).idx_reward;
+        plot_arm_sim(sim_data(iTrial),params,tc_data);
+        pause;
+        close all;
+    end
 end

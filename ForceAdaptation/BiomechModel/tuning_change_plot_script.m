@@ -1,86 +1,67 @@
-
-%%
-if 0
-    use_models = {'muscle'};
-    
-    
-    close all;
-    figure;
-    hold all;
-    use_colors = {'k','b','r','m'};
-    for i = 1:length(use_models)
-        plot(-1,0,'o','LineWidth',3,'Color',use_colors{i});
-    end
-    
-    cf_dirs = [1 1 1];
-    for i = 1:length(use_models)
-        % find which cells are tuned in all epochs
-        idx = ones(num_neurons,size(blocks,1));
-        for j = 1:size(blocks,1)
-            idx(:,j) = mean(tc_data(j).(use_models{i}).rs,2) > 0.5;
-        end
-        
-        idx = all(idx,2);
-        
-        for j = 1:size(blocks,1)
-            dpd = angleDiff(tc_data(1).(use_models{i}).tc(:,3),tc_data(j).(use_models{i}).tc(:,3),true,true);
-            
-            dpd = dpd(idx);
-            
-            m = cf_dirs(i)*circular_mean(dpd);
-            s = circular_confmean(dpd,0.01);%circular_std(dpd);%./sqrt(length(dpd));
-            plot(j+0.1*(i-1),m.*(180/pi),'o','LineWidth',3,'Color',use_colors{i});
-            plot([j+0.1*(i-1); j+0.1*(i-1)],[m + s; m - s].*(180/pi),'-','LineWidth',2,'Color',use_colors{i});
-        end
-    end
-    
-    set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 size(blocks,1)+1]);
-    xlabel('Blocks of Trials','FontSize',14);
-    ylabel('Population change in PD','FontSize',14);
-    legend(use_models,'FontSize',14);
-    title(coordinate_frame,'FontSize',14);
-    
-end
-
-%%
+%% CELL CLASSES AND SCATTER PLOT
 
 use_model = 'muscle';
 reassign_others = false;
 
 alpha = 0.05;
 comp_blocks = [1 2 3];
-num_neurons = 50;
+num_neurons = 100;
 
 classColors = {'k','b','r','m','g','c'};
-
+% root_dir = 'F:\trial_data_files\biomech_sim_results\';
 root_dir = 'F:\trial_data_files\';
 
+% filenames = { ...
+%     'Chewie_CO_FF_2013-10-22', ...
+%     'Chewie_CO_FF_2013-10-23', ...
+%     'Chewie_CO_FF_2013-10-31', ...
+%     'Chewie_CO_FF_2013-11-01', ...
+%     'Chewie_CO_FF_2013-12-03', ...
+%     'Chewie_CO_FF_2013-12-04', ...
+%     'Chewie_CO_FF_2015-06-29', ...
+%     'Chewie_CO_FF_2015-06-30', ...
+%     'Chewie_CO_FF_2015-07-01', ...
+%     'Chewie_CO_FF_2015-07-03', ...
+%     'Chewie_CO_FF_2015-07-06', ...
+%     'Chewie_CO_FF_2015-07-07', ...
+%     'Chewie_CO_FF_2015-07-08', ...
+%     'Mihili_CO_FF_2014-02-03', ...
+%     'Mihili_CO_FF_2014-02-17', ...
+%     'Mihili_CO_FF_2014-02-18', ...
+%     'Mihili_CO_FF_2014-03-07', ...
+%     'Mihili_CO_FF_2015-06-10', ...
+%     'Mihili_CO_FF_2015-06-11', ...
+%     'Mihili_CO_FF_2015-06-15', ...
+%     'Mihili_CO_FF_2015-06-16', ...
+%     'Mihili_CO_FF_2015-06-17', ...
+%     };
+
 filenames = { ...
-    'Chewie_CO_FF_2013-10-22', ...
-    'Chewie_CO_FF_2013-10-23', ...
-    'Chewie_CO_FF_2013-10-31', ...
-    'Chewie_CO_FF_2013-11-01', ...
-    'Chewie_CO_FF_2013-12-03', ...
-    'Chewie_CO_FF_2013-12-04', ...
-    'Chewie_CO_FF_2015-06-29', ...
-    'Chewie_CO_FF_2015-06-30', ...
+%     'Chewie_CO_FF_2013-10-22', ...
+%     'Chewie_CO_FF_2013-10-23', ...
+%     'Chewie_CO_FF_2013-10-31', ...
+%     'Chewie_CO_FF_2013-11-01', ...
+%     'Chewie_CO_FF_2013-12-03', ...
+%     'Chewie_CO_FF_2013-12-04', ...
     'Chewie_CO_FF_2015-07-01', ...
-    'Chewie_CO_FF_2015-07-03', ...
-    'Chewie_CO_FF_2015-07-06', ...
-    'Chewie_CO_FF_2015-07-07', ...
-    'Chewie_CO_FF_2015-07-08', ...
-    'Mihili_CO_FF_2014-02-17', ...
-    'Mihili_CO_FF_2014-02-18', ...
-    'Mihili_CO_FF_2014-03-07', ...
-    'Mihili_CO_FF_2015-06-10', ...
-    'Mihili_CO_FF_2015-06-11', ...
-    'Mihili_CO_FF_2015-06-15', ...
-    'Mihili_CO_FF_2015-06-16', ...
-    'Mihili_CO_FF_2014-02-03', ...
-    'Mihili_CO_FF_2015-06-17'};
+%     'Chewie_CO_FF_2015-07-03', ...
+%     'Mihili_CO_FF_2014-02-03', ...
+%     'Mihili_CO_FF_2014-02-17', ...
+%     'Mihili_CO_FF_2014-02-18', ...
+%     'Mihili_CO_FF_2014-03-07', ...
+%     'Mihili_CO_FF_2015-06-11', ...
+%     'Mihili_CO_FF_2015-06-17', ...
+%         'Chewie_CO_FF_2015-06-29', ...
+%         'Chewie_CO_FF_2015-06-30', ...
+%         'Chewie_CO_FF_2015-07-06', ...
+%         'Chewie_CO_FF_2015-07-07', ...
+%         'Chewie_CO_FF_2015-07-08', ...
+%         'Mihili_CO_FF_2015-06-10', ...
+%         'Mihili_CO_FF_2015-06-15', ...
+%         'Mihili_CO_FF_2015-06-16', ...
+    };
 
-
-[dpd_ad, dpd_wo, dpd_adwo, cell_classes, bl_avg, bl_dom, bl_r2, bl_cb,tuned_cells,cell_tuning_idx] = deal([]);
+[dpd_ad, dpd_wo, dpd_adwo, ddom_ad, cell_classes, bl_avg, bl_dom, bl_r2, bl_cb,bl_pd,tuned_cells,cell_tuning_idx,cell_tcs] = deal([]);
 for iFile = 1:length(filenames)
     load([root_dir filenames{iFile} '_results.mat'],'tc_data','neural_tcs','params');
     
@@ -99,45 +80,65 @@ for iFile = 1:length(filenames)
         elseif tc(i,3) + tc(i,5) ~= 0 && tc(i,2) + tc(i,4) == 0 % it's an extensor cell
             tc_index(i,1) = 2;
             tc_index(i,2) = (abs(tc(i,3)) - abs(tc(i,5)))/(abs(tc(i,3)) + abs(tc(i,5)));
-        else % we didn't do synergies
+            
+        elseif tc(i,2) + tc(i,3) ~= 0 && tc(i,4) + tc(i,5) == 0 % it's a shoulder
+            tc_index(i,1) = 3;
+            tc_index(i,2) = (abs(tc(i,2)) - abs(tc(i,3)))/(abs(tc(i,2)) + abs(tc(i,3)));
+        elseif tc(i,4) + tc(i,5) ~= 0 && tc(i,2) + tc(i,3) == 0 % it's an elbow cell
+            tc_index(i,1) = 4;
+            tc_index(i,2) = (abs(tc(i,4)) - abs(tc(i,5)))/(abs(tc(i,4)) + abs(tc(i,5)));
+        else % we didn't do synergies or joints
+            % OPTION 1
             % 0 means equal weight to flexion and extension
             % negative means more flexion
             % positive means more extension
-            tc_index(i,1) = 3;
-            tc_index(i,2) = ((abs(tc(i,2))+abs(tc(i,4))) - (abs(tc(i,3))+abs(tc(i,5))))/((abs(tc(i,2))+abs(tc(i,4))) + (abs(tc(i,3))+abs(tc(i,5))));
+            % tc_index(i,2) = ((abs(tc(i,2))+abs(tc(i,4))) - (abs(tc(i,3))+abs(tc(i,5))))/((abs(tc(i,2))+abs(tc(i,4))) + (abs(tc(i,3))+abs(tc(i,5))));
+            
+            % OPTION 2
+            % 0 means equal elbow and shoulder
+            % negative means more shoulder
+            % positive means more elbow
+            tc_index(i,2) = ((abs(tc(i,2))+abs(tc(i,3))) - (abs(tc(i,4))+abs(tc(i,5))))/((abs(tc(i,2))+abs(tc(i,3))) + (abs(tc(i,4))+abs(tc(i,5))));
         end
     end
     
     
-%     mean(tc_data(1).(use_model).rs,2) > 0.5 & ...
-    is_tuned = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
-        all(prctile(tc_data(2).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
-        all(prctile(tc_data(3).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
-        angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
-        angleDiff(tc_data(2).(use_model).cb{3}(:,1),tc_data(2).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
-         angleDiff(tc_data(3).(use_model).cb{3}(:,1),tc_data(3).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+    %     mean(tc_data(1).(use_model).rs,2) > 0.5 & ...
+    is_tuned = all(prctile(tc_data(comp_blocks(1)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(2)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(3)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        angleDiff(tc_data(comp_blocks(1)).(use_model).cb{3}(:,1),tc_data(comp_blocks(1)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(2)).(use_model).cb{3}(:,1),tc_data(comp_blocks(2)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(3)).(use_model).cb{3}(:,1),tc_data(comp_blocks(3)).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
     
     % get some facts about the tuned cells
     bl_avg = [bl_avg; tc_data(1).(use_model).tc(:,1)]; % mean
     bl_dom = [bl_dom; tc_data(1).(use_model).tc(:,2)]; % modulation depth
     bl_r2 = [bl_r2; mean(tc_data(1).(use_model).rs,2)]; % r-squared
     bl_cb = [bl_cb; angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false)];
+    bl_pd = [bl_pd; tc_data(1).(use_model).tc(:,3)];
     
     % get PDs
-    bl = tc_data(1).(use_model).tc(:,3);
-    ad = tc_data(2).(use_model).tc(:,3);
-    wo = tc_data(3).(use_model).tc(:,3);
+    bl = tc_data(comp_blocks(1)).(use_model).tc(:,3);
+    ad = tc_data(comp_blocks(2)).(use_model).tc(:,3);
+    wo = tc_data(comp_blocks(3)).(use_model).tc(:,3);
     
     temp = angleDiff(bl,ad,true,true);
     
     if mean(temp) < 0
-        temp = -temp;
+        disp('FLIPPING');
+%         temp = -temp;
     end
     
     dpd_ad = [dpd_ad; temp];
     dpd_wo = [dpd_wo; angleDiff(bl,wo,true,true)];
     dpd_adwo = [dpd_adwo; angleDiff(ad,wo,true,true)];
     
+    % get DOM
+    bl = tc_data(comp_blocks(1)).(use_model).tc(:,2);
+    ad = tc_data(comp_blocks(2)).(use_model).tc(:,2);
+    wo = tc_data(comp_blocks(3)).(use_model).tc(:,2);
+    ddom_ad = [ddom_ad; ad-bl];
     
     % classify
     all_perms = nchoosek(comp_blocks,2);
@@ -146,6 +147,8 @@ for iFile = 1:length(filenames)
     for j = 1:size(all_perms,1)
         for i = 1:size(tc_data(1).(use_model).boot_pds,1)
             cb = prctile(angleDiff(tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),tc_data(all_perms(j,2)).(use_model).boot_pds(i,:),true,true),100*[alpha/2,1-alpha/2],2);
+%             cb = prctile(tc_data(all_perms(j,2)).(use_model).boot_pds(i,:)-tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),100*[alpha/2,1-alpha/2],2);
+            
             if isempty(range_intersection([0 0],cb))
                 is_diff(i,j) = 1;
             end
@@ -161,15 +164,16 @@ for iFile = 1:length(filenames)
         % 5 other: 1 1 1
         if all(is_diff(i,:) == [0 0 0])
             cc(i) = 1;
-        elseif all(is_diff(i,:) == [1 0 1]) || all(is_diff(i,:) == [0 0 1])
+        elseif all(is_diff(i,:) == [1 0 1])
             cc(i) = 2;
         elseif all(is_diff(i,:) == [1 1 0]) || all(is_diff(i,:) == [1 0 0])
             cc(i) = 3;
-        elseif all(is_diff(i,:) == [0 1 1]) || all(is_diff(i,:) == [0 1 0])
+        elseif all(is_diff(i,:) == [0 1 1]) || all(is_diff(i,:) == [0 0 1]) || all(is_diff(i,:) == [0 1 0])
             cc(i) = 4;
         elseif all(is_diff(i,:) == [1 1 1])
             cc(i) = 5;
         else
+            disp('fuck');
             cc(i) = 6;
         end
     end
@@ -177,6 +181,7 @@ for iFile = 1:length(filenames)
     cell_classes = [cell_classes; cc];
     tuned_cells = [tuned_cells; is_tuned];
     cell_tuning_idx = [cell_tuning_idx; tc_index];
+    cell_tcs = [cell_tcs; tc];
 end
 
 if reassign_others
@@ -189,6 +194,7 @@ end
 
 tuned_cells = logical(tuned_cells);
 
+bl_pd = bl_pd(tuned_cells);
 bl_avg = bl_avg(tuned_cells);
 bl_dom = bl_dom(tuned_cells);
 bl_r2 = bl_r2(tuned_cells);
@@ -196,10 +202,12 @@ bl_cb = bl_cb(tuned_cells);
 dpd_ad = dpd_ad(tuned_cells);
 dpd_wo = dpd_wo(tuned_cells);
 dpd_adwo = dpd_adwo(tuned_cells);
+ddom_ad = ddom_ad(tuned_cells);
 cell_classes = cell_classes(tuned_cells);
 
 cell_tuning_joint = cell_tuning_idx(tuned_cells,1);
 cell_tuning_idx = cell_tuning_idx(tuned_cells,2);
+cell_tcs = cell_tcs(tuned_cells,:);
 
 binsize = 5;
 figure('Position',[300 50 950 950]);
@@ -241,132 +249,343 @@ ylabel('Percent of Cells','FontSize',14);
 title([use_model '-based neurons'],'FontSize',14);
 
 
-figure;
-hold all;
-for i = 1:5
-    m = mean(bl_cb(cell_classes==i));
-    s = std(bl_cb(cell_classes==i))/sqrt(sum(cell_classes==i));
-    
-    plot(i,m,'ko','LineWidth',3);
-    plot([i,i],[m-s,m+s],'k-','LineWidth',2);
-end
-
 %%
 close all;
+p = anovan(dpd_ad,[cell_tcs(:,2:end), ...
+    abs(cell_tcs(:,3)-cell_tcs(:,2)), ...
+    abs(cell_tcs(:,5)-cell_tcs(:,4)), ...
+    abs(cell_tcs(:,4)-cell_tcs(:,2)), ...
+    abs(cell_tcs(:,5)-cell_tcs(:,3)), ...
+    ddom_ad, ...
+    bl_avg, ...
+    bl_dom, ...
+    bl_r2],'continuous',1:12);
 
 figure;
-subplot(2,6,1);
-hist(bl_avg(cell_classes==2 | cell_classes== 3 | cell_classes== 5),0:1:35);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight'); title('avg');
+subplot(3,4,1); plot(dpd_ad, cell_tcs(:,2), '.'); title(['shoulder flex; p=' num2str(p(1))]);
+subplot(3,4,2); plot(dpd_ad, cell_tcs(:,3), '.'); title(['shoulder ext; p=' num2str(p(2))]);
+subplot(3,4,3); plot(dpd_ad, cell_tcs(:,4), '.'); title(['elbow flex; p=' num2str(p(3))]);
+subplot(3,4,4); plot(dpd_ad, cell_tcs(:,5), '.'); title(['elbow ext; p=' num2str(p(4))]);
 
-ylabel('Dynamic cells');
-subplot(2,6,2);
-hist(bl_dom(cell_classes==2 | cell_classes== 3 | cell_classes== 5),0:1:35);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight'); title('dom');
-subplot(2,6,3);
-hist(bl_r2(cell_classes==2 | cell_classes== 3 | cell_classes== 5),0.5:0.01:1);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight'); title('r2');
-subplot(2,6,4);
-hist(180/pi*bl_cb(cell_classes==2 | cell_classes== 3 | cell_classes== 5), 180/pi*(0:pi/180:40*pi/180));
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight'); title('cb');
-subplot(2,6,5);
-hist(180/pi*dpd_ad(cell_classes==2 | cell_classes== 3 | cell_classes== 5),180/pi*(-180*pi/180:5*pi/180:180*pi/180));
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight'); title('dpd');
-subplot(2,6,6);
-hist(cell_tuning_idx(cell_classes==2 | cell_classes== 3 | cell_classes== 5),-1:0.05:1);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
+subplot(3,4,5); plot(dpd_ad, abs(cell_tcs(:,3)-cell_tcs(:,2)), '.'); title(['shoulder flex/ext; p=' num2str(p(5))]);
+subplot(3,4,6); plot(dpd_ad, abs(cell_tcs(:,5)-cell_tcs(:,4)), '.'); title(['elbow flex/ext; p=' num2str(p(6))]);
+subplot(3,4,7); plot(dpd_ad, abs(cell_tcs(:,4)-cell_tcs(:,2)), '.'); title(['elbow/shoulder flex; p=' num2str(p(7))]);
+subplot(3,4,8); plot(dpd_ad, abs(cell_tcs(:,5)-cell_tcs(:,3)), '.'); title(['elbow/shoulder ext; p=' num2str(p(8))]);
 
-subplot(2,6,7);
-hist(bl_avg(cell_classes==1 | cell_classes== 4),0:1:35);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
-ylabel('Kinematic Cells');
-subplot(2,6,8);
-hist(bl_dom(cell_classes==1 | cell_classes== 4),0:1:35);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
-subplot(2,6,9);
-hist(bl_r2(cell_classes==1 | cell_classes== 4),0.5:0.01:1);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
-subplot(2,6,10);
-hist(180/pi*bl_cb(cell_classes==1 | cell_classes== 4),180/pi*(0:pi/180:40*pi/180));
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
-subplot(2,6,11);
-hist(180/pi*dpd_ad(cell_classes==1 | cell_classes== 4),180/pi*(-180*pi/180:5*pi/180:180*pi/180));
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
-subplot(2,6,12);
-hist(cell_tuning_idx(cell_classes==1 | cell_classes== 4),-1:0.05:1);
-set(gca,'Box','off','TickDir','out','FontSize',14); axis('tight');
+subplot(3,4,9); plot(dpd_ad, ddom_ad, '.'); title(['change in dom; p=' num2str(p(9))]);
+subplot(3,4,10); plot(dpd_ad, bl_avg, '.'); title(['baseline fr; p=' num2str(p(10))]);
+subplot(3,4,11); plot(dpd_ad, bl_dom, '.'); title(['baseline dom; p=' num2str(p(11))]);
+subplot(3,4,12); plot(dpd_ad, bl_r2, '.'); title(['baseline r2; p=' num2str(p(12))]);
 
 
-%%
-if 0
-    comp_blocks = [1 2 3];
-    bin_size = 15;
-    figure;
-    for i = 1:length(use_models)
-        dpd1 = cf_dirs(i)*angleDiff(tc_data(comp_blocks(1)).(use_models{i}).tc(:,3),tc_data(comp_blocks(2)).(use_models{i}).tc(:,3),true,true).*(180/pi);
-        dpd2 = angleDiff(tc_data(comp_blocks(1)).(use_models{i}).tc(:,3),tc_data(comp_blocks(3)).(use_models{i}).tc(:,3),true,true).*(180/pi);
+%% OVER TIME
+
+use_model = 'muscle';
+comp_blocks = [1 4 7];
+errScale = 2;
+
+% root_dir = 'F:\trial_data_files\biomech_sim_results\';
+
+filenames = { ...
+    'Chewie_CO_FF_2013-10-22', ...
+    'Chewie_CO_FF_2013-10-23', ...
+    'Chewie_CO_FF_2013-10-31', ...
+    'Chewie_CO_FF_2013-11-01', ...
+    'Chewie_CO_FF_2013-12-03', ...
+    'Chewie_CO_FF_2013-12-04', ...
+    'Chewie_CO_FF_2015-07-01', ...
+    'Chewie_CO_FF_2015-07-03', ...
+    %     'Chewie_CO_FF_2015-06-29', ...
+    %     'Chewie_CO_FF_2015-06-30', ...
+    %     'Chewie_CO_FF_2015-07-06', ...
+    %     'Chewie_CO_FF_2015-07-07', ...
+    %     'Chewie_CO_FF_2015-07-08', ...
+    };
+
+
+[dpd,dpd_err,all_bl] = deal([]);
+for iFile = 1:length(filenames)
+    load([root_dir filenames{iFile} '_results.mat'],'tc_data','params');
+    
+    %     mean(tc_data(1).(use_model).rs,2) > 0.5 & ...
+    is_tuned = all(prctile(tc_data(comp_blocks(1)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(2)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(3)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        angleDiff(tc_data(comp_blocks(1)).(use_model).cb{3}(:,1),tc_data(comp_blocks(1)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(2)).(use_model).cb{3}(:,1),tc_data(comp_blocks(2)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(3)).(use_model).cb{3}(:,1),tc_data(comp_blocks(3)).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+    
+    % get PDs
+    bl = tc_data(comp_blocks(1)).(use_model).tc(:,3);
+    
+    file_dpd = zeros(sum(is_tuned),7);
+    file_dpd_err = zeros(sum(is_tuned),7);
+    for i = 1:7
+        temp = angleDiff(bl,tc_data(i).(use_model).tc(:,3),true,true);
         
-        % find which cells are tuned in all epochs
-        idx = ones(num_neurons,size(blocks,1));
-        for j = 1:size(blocks,1)
-            idx(:,j) = mean(tc_data(j).(use_models{i}).rs,2) > 0.5;
+        if mean(temp) < 0
+            temp = -temp;
+        end
+        file_dpd(:,i) = temp(is_tuned);
+        
+        temp = angleDiff(tc_data(i).(use_model).cb{3}(:,1),tc_data(i).(use_model).cb{3}(:,2),true,false)./errScale;
+        file_dpd_err(:,i) = temp(is_tuned);
+    end
+    dpd = [dpd; file_dpd];
+    dpd_err = [dpd_err; file_dpd_err];
+    all_bl = [all_bl; bl];
+end
+
+m = circular_mean(dpd,[],1)*180/pi;
+s = mean(dpd_err*180/pi);
+% s = circular_std(dpd)*180/pi;
+
+figure('Position',[200 200 1280 800]); hold all;
+plot(1:7,m,'bo','LineWidth',2);
+plot([1:7;1:7],[m-s; m+s],'b-','LineWidth',2);
+
+
+filenames = { ...
+    'Mihili_CO_FF_2014-02-03', ...
+    'Mihili_CO_FF_2014-02-17', ...
+    'Mihili_CO_FF_2014-02-18', ...
+    'Mihili_CO_FF_2014-03-07', ...
+    'Mihili_CO_FF_2015-06-11', ...
+    'Mihili_CO_FF_2015-06-17', ...
+    %     'Mihili_CO_FF_2015-06-10', ...
+    %     'Mihili_CO_FF_2015-06-15', ...
+    %     'Mihili_CO_FF_2015-06-16', ...
+    };
+
+
+[dpd,dpd_err,all_bl] = deal([]);
+for iFile = 1:length(filenames)
+    load([root_dir filenames{iFile} '_results.mat'],'tc_data','params');
+    
+    %     mean(tc_data(1).(use_model).rs,2) > 0.5 & ...
+    is_tuned = all(prctile(tc_data(comp_blocks(1)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(2)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        all(prctile(tc_data(comp_blocks(3)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+        angleDiff(tc_data(comp_blocks(1)).(use_model).cb{3}(:,1),tc_data(comp_blocks(1)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(2)).(use_model).cb{3}(:,1),tc_data(comp_blocks(2)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+        angleDiff(tc_data(comp_blocks(3)).(use_model).cb{3}(:,1),tc_data(comp_blocks(3)).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+    
+    % get PDs
+    bl = tc_data(comp_blocks(1)).(use_model).tc(:,3);
+    
+    file_dpd = zeros(sum(is_tuned),7);
+    file_dpd_err = zeros(sum(is_tuned),7);
+    for i = 1:7
+        temp = angleDiff(bl,tc_data(i).(use_model).tc(:,3),true,true);
+        
+        if mean(temp) < 0
+            temp = -temp;
+        end
+        file_dpd(:,i) = temp(is_tuned);
+        
+        temp = angleDiff(tc_data(i).(use_model).cb{3}(:,1),tc_data(i).(use_model).cb{3}(:,2),true,false)./errScale;
+        file_dpd_err(:,i) = temp(is_tuned);
+    end
+    dpd = [dpd; file_dpd];
+    dpd_err = [dpd_err; file_dpd_err];
+    all_bl = [all_bl; bl];
+end
+
+plotMin = -40;
+plotMax = 110;
+
+m = circular_mean(dpd,[],1)*180/pi;
+s = mean(dpd_err*180/pi);
+% s = circular_std(dpd)*180/pi;
+
+plot((1:7)+0.1,m,'ro','LineWidth',2);
+plot([1:7;1:7]+0.1,[m-s; m+s],'r-','LineWidth',2);
+
+
+% Now add some extra stuff and configure the plot
+plot([0 7+1],[0 0],'LineWidth',1,'Color',[0.6 0.6 0.6]);
+plot([1.5 1.5],[plotMin plotMax],'k--','LineWidth',1);
+plot([4.5 4.5],[plotMin plotMax],'k--','LineWidth',1);
+
+axis([0.3 7+0.3 plotMin plotMax]);
+
+set(gca,'Box','off','TickDir','out','FontSize',14);
+
+
+
+%% CLASSES IN DIFFERENT BLOCKS
+
+use_model = 'muscle';
+reassign_others = false;
+
+alpha = 0.05;
+class_blocks = {[1 2 5],[1 3 6],[1 4 7]};
+num_neurons = 100;
+
+classColors = {'k','b','r','m','g','c'};
+
+% root_dir = 'F:\trial_data_files\biomech_sim_results\';
+
+filenames = { ...
+    'Chewie_CO_FF_2013-10-22', ...
+    'Chewie_CO_FF_2013-10-23', ...
+    'Chewie_CO_FF_2013-10-31', ...
+    'Chewie_CO_FF_2013-11-01', ...
+    'Chewie_CO_FF_2013-12-03', ...
+    'Chewie_CO_FF_2013-12-04', ...
+    'Chewie_CO_FF_2015-07-01', ...
+    'Chewie_CO_FF_2015-07-03', ...
+    'Mihili_CO_FF_2014-02-03', ...
+    'Mihili_CO_FF_2014-02-17', ...
+    'Mihili_CO_FF_2014-02-18', ...
+    'Mihili_CO_FF_2014-03-07', ...
+    'Mihili_CO_FF_2015-06-11', ...
+    'Mihili_CO_FF_2015-06-17', ...
+    %     'Chewie_CO_FF_2015-06-29', ...
+    %     'Chewie_CO_FF_2015-06-30', ...
+    %     'Chewie_CO_FF_2015-07-06', ...
+    %     'Chewie_CO_FF_2015-07-07', ...
+    %     'Chewie_CO_FF_2015-07-08', ...
+    %     'Mihili_CO_FF_2015-06-10', ...
+    %     'Mihili_CO_FF_2015-06-15', ...
+    %     'Mihili_CO_FF_2015-06-16', ...
+    };
+
+figure; hold all;
+for iBlock = 1:3
+    comp_blocks = class_blocks{iBlock};
+    [dpd_ad, dpd_wo, dpd_adwo, cell_classes,tuned_cells] = deal([]);
+    s_classes = cell(1,length(filenames));
+    for iFile = 1:length(filenames)
+        load([root_dir filenames{iFile} '_results.mat'],'tc_data','neural_tcs','params');
+        
+        is_tuned = all(prctile(tc_data(comp_blocks(1)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(comp_blocks(2)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(comp_blocks(3)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            angleDiff(tc_data(comp_blocks(1)).(use_model).cb{3}(:,1),tc_data(comp_blocks(1)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(comp_blocks(2)).(use_model).cb{3}(:,1),tc_data(comp_blocks(2)).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(comp_blocks(3)).(use_model).cb{3}(:,1),tc_data(comp_blocks(3)).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+
+        % get PDs
+        bl = tc_data(comp_blocks(1)).(use_model).tc(:,3);
+        ad = tc_data(comp_blocks(2)).(use_model).tc(:,3);
+        wo = tc_data(comp_blocks(3)).(use_model).tc(:,3);
+        
+        temp = angleDiff(bl,ad,true,true);
+        
+        if mean(temp) < 0
+            temp = -temp;
         end
         
-        idx = all(idx,2);
+        dpd_ad = [dpd_ad; temp];
+        dpd_wo = [dpd_wo; angleDiff(bl,wo,true,true)];
+        dpd_adwo = [dpd_adwo; angleDiff(ad,wo,true,true)];
         
-        subplot(length(use_models),2,2*(i-1)+1)
-        hist(dpd1(idx),-180:bin_size:180);
-        axis('tight');
-        set(gca,'Box','off','TickDir','out','FontSize',14,'Xlim',[-180 180]);
-        title([use_models{i} ': Curl Field'],'FontSize',14);
-        xlabel('Change in PD (Deg)','FontSize',14);
+        % classify
+        all_perms = nchoosek(comp_blocks,2);
         
-        subplot(length(use_models),2,2*(i-1)+2)
-        hist(dpd2(idx),-180:bin_size:180);
-        axis('tight');
-        set(gca,'Box','off','TickDir','out','FontSize',14,'Xlim',[-180 180]);
-        title([use_models{i} ': Washout'],'FontSize',14);
-        xlabel('Change in PD (Deg)','FontSize',14);
+        is_diff = zeros(num_neurons,size(all_perms,1));
+        for j = 1:size(all_perms,1)
+            for i = 1:size(tc_data(1).(use_model).boot_pds,1)
+                cb = prctile(angleDiff(tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),tc_data(all_perms(j,2)).(use_model).boot_pds(i,:),true,true),100*[alpha/2,1-alpha/2],2);
+                %cb = prctile(tc_data(all_perms(j,2)).(use_model).boot_pds(i,:)-tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),100*[alpha/2,1-alpha/2],2);
+                
+                if isempty(range_intersection([0 0],cb))
+                    is_diff(i,j) = 1;
+                end
+            end
+        end
+        
+        cc = zeros(size(is_diff,1),1);
+        for i = 1:size(is_diff,1)
+            % 2 dynamic: 1 0 1
+            % 1 kinematic: 0 0 0
+            % 3 memory I: 1 1 0
+            % 4 memory II: 0 1 1
+            % 5 other: 1 1 1
+            if all(is_diff(i,:) == [0 0 0])
+                cc(i) = 1;
+            elseif all(is_diff(i,:) == [1 0 1])
+                cc(i) = 2;
+            elseif all(is_diff(i,:) == [1 1 0]) || all(is_diff(i,:) == [1 0 0])
+                cc(i) = 3;
+            elseif all(is_diff(i,:) == [0 1 1]) || all(is_diff(i,:) == [0 0 1]) || all(is_diff(i,:) == [0 1 0])
+                cc(i) = 4;
+            elseif all(is_diff(i,:) == [1 1 1])
+                cc(i) = 5;
+            else
+                disp('fuck');
+                cc(i) = 6;
+            end
+        end
+        
+        cell_classes = [cell_classes; cc];
+        tuned_cells = [tuned_cells; is_tuned];
+        s_classes{iFile} = cc(is_tuned);
     end
+    
+    if reassign_others
+        mem_ind = abs(dpd_wo) ./ min( abs(dpd_ad) , abs(dpd_adwo) );
+        idx = cell_classes == 5 & mem_ind >= 1;
+        cell_classes(idx) = 3;
+        idx = cell_classes == 5 & mem_ind < 1;
+        cell_classes(idx) = 2;
+    end
+    
+    tuned_cells = logical(tuned_cells);
+    
+    dpd_ad = dpd_ad(tuned_cells);
+    dpd_wo = dpd_wo(tuned_cells);
+    dpd_adwo = dpd_adwo(tuned_cells);
+    cell_classes = cell_classes(tuned_cells);
+    
+        [k,x] = hist(cell_classes,1:5);
+        bar(x+0.25*(iBlock-1),100*k/sum(k),0.25)
+        set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1.25:5.25,'XTickLabel',{'Kin','Dyn','MemI','MemII','Other'},'XLim',[0.75 6]);
+        ylabel('Percent of Cells','FontSize',14);
+        title([use_model '-based neurons'],'FontSize',14);
 end
 
 
 %% plot sliding window thing
 if 1
-    root_dir = 'F:\trial_data_files\biomech_sim_results_poisson_allMuscles\';
+%     root_dir = 'F:\trial_data_files\biomech_sim_results\';
     use_model = 'muscle';
     doMD = false;
+    
+    ymin = 45;
+    ymax = 135;
     
     figure;
     subplot1(1,2);
     
     filenames = { ...
-                'Chewie_CO_FF_2013-10-22', ...
-                'Chewie_CO_FF_2013-10-23', ...
-                'Chewie_CO_FF_2013-10-31', ...
-                'Chewie_CO_FF_2013-11-01', ...
-                'Chewie_CO_FF_2013-12-03', ...
-                'Chewie_CO_FF_2013-12-04', ...
-                'Chewie_CO_FF_2015-06-29', ...
-        'Chewie_CO_FF_2015-06-30', ...
+        'Chewie_CO_FF_2013-10-22', ...
+        'Chewie_CO_FF_2013-10-23', ...
+        'Chewie_CO_FF_2013-10-31', ...
+        'Chewie_CO_FF_2013-11-01', ...
+        'Chewie_CO_FF_2013-12-03', ...
+        'Chewie_CO_FF_2013-12-04', ...
         'Chewie_CO_FF_2015-07-01', ...
         'Chewie_CO_FF_2015-07-03', ...
-        'Chewie_CO_FF_2015-07-06', ...
-        'Chewie_CO_FF_2015-07-07', ...
-        'Chewie_CO_FF_2015-07-08'};
-    %     'Mihili_CO_FF_2014-02-17', ...
-    %     'Mihili_CO_FF_2014-02-18', ...
-    %     'Mihili_CO_FF_2014-03-07', ...
-    %     'Mihili_CO_FF_2015-06-10', ...
-    %     'Mihili_CO_FF_2015-06-11', ...
-    %     'Mihili_CO_FF_2015-06-15', ...
-    %     'Mihili_CO_FF_2015-06-16'};
+        % 'Chewie_CO_FF_2015-06-29', ...
+        % 'Chewie_CO_FF_2015-06-30', ...
+        % 'Chewie_CO_FF_2015-07-06', ...
+        % 'Chewie_CO_FF_2015-07-07', ...
+        % 'Chewie_CO_FF_2015-07-08', ...
+        };
     
     
     for iFile = 1:length(filenames)
         load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
         
-        tuned_cells = mean(tc_data(1).(use_model).rs,2) > 0.5;
+        %tuned_cells = mean(tc_data(1).(use_model).rs,2) > 0.5;
+        tuned_cells = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(2).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(3).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(2).(use_model).cb{3}(:,1),tc_data(2).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(3).(use_model).cb{3}(:,1),tc_data(3).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
         
         if iFile == 1
             day_dpd = zeros(length(filenames),length(sw_data));
@@ -406,14 +625,14 @@ if 1
             m(i) = mean(all_dpd(:,i));
             s(i) = std(all_dpd(:,i))./sqrt(length(all_dpd));
         else
-        m(i) = circular_mean(all_dpd(:,i));
-        s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
+            m(i) = circular_mean(all_dpd(:,i));
+            s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
         end
     end
     
-    plot(1:length(all_f),m.*(180/pi),'b','LineWidth',2);
-    plot([1:length(all_f);1:length(all_f)],[m-s; m+s].*(180/pi),'b','LineWidth',2);
-    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YLim',[50 110]);
+    plot(1:size(all_f,2),m.*(180/pi),'b','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s].*(180/pi),'b','LineWidth',2);
+    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YLim',[ymin ymax]);
     ylabel('mean dPD','FontSize',14);
     xlabel('Windows over movement','FontSize',14);
     
@@ -426,37 +645,43 @@ if 1
     
     m = mean(all_f,1);
     s = std(all_f,1)./sqrt(size(all_f,1));
-    plot(1:length(all_f),m,'k','LineWidth',2);
-    plot([1:length(all_f);1:length(all_f)],[m-s; m+s],'k','LineWidth',2);
+    plot(1:size(all_f,2),m,'k','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s],'k','LineWidth',2);
     set(ax2,'XLim',[0 length(all_f)+1],'Box','off','XTick',[],'FontSize',14,'YLim',[0 2.5],'YTick',[]);
     % ylabel('mean dForce','FontSize',14);
     
     title('Chewie','FontSize',14);
     
-    % figure;
-    % plot(reshape(all_f,1,size(all_f,2)*size(all_f,1)),reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi),'bo','LineWidth',2);
-    % set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 2.5],'YLim',[20 120]);
-    % xlabel('Change in Force','FontSize',14);
-    % ylabel('dPD','FontSize',14);
     
+%     figure;
+%     plot(reshape(all_f,1,size(all_f,2)*size(all_f,1)),reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi),'bo','LineWidth',2);
+%     monkey_dpd = reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi);
+%     monkey_f = reshape(all_f,1,size(all_f,2)*size(all_f,1));
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
     filenames = { ...
         'Mihili_CO_FF_2014-02-17', ...
         'Mihili_CO_FF_2014-02-18', ...
         'Mihili_CO_FF_2014-03-07', ...
-        'Mihili_CO_FF_2015-06-10', ...
         'Mihili_CO_FF_2015-06-11', ...
-        'Mihili_CO_FF_2015-06-15', ...
-        'Mihili_CO_FF_2015-06-16', ...
         'Mihili_CO_FF_2014-02-03', ...
-        'Mihili_CO_FF_2015-06-17'};
-    
+        'Mihili_CO_FF_2015-06-17', ...
+%         'Mihili_CO_FF_2015-06-10', ...
+%         'Mihili_CO_FF_2015-06-15', ...
+%         'Mihili_CO_FF_2015-06-16', ...
+        };
     
     for iFile = 1:length(filenames)
         load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
         
-        tuned_cells = mean(tc_data(1).(use_model).rs,2) > 0.5;
+        tuned_cells = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(2).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(3).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(2).(use_model).cb{3}(:,1),tc_data(2).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(3).(use_model).cb{3}(:,1),tc_data(3).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
         
         if iFile == 1
             day_dpd = zeros(length(filenames),length(sw_data));
@@ -496,14 +721,14 @@ if 1
             m(i) = mean(all_dpd(:,i));
             s(i) = std(all_dpd(:,i))./sqrt(length(all_dpd));
         else
-        m(i) = circular_mean(all_dpd(:,i));
-        s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
+            m(i) = circular_mean(all_dpd(:,i));
+            s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
         end
     end
     
-    plot(1:length(all_f),m.*(180/pi),'b','LineWidth',2);
-    plot([1:length(all_f);1:length(all_f)],[m-s; m+s].*(180/pi),'b','LineWidth',2);
-    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YTick',[],'YLim',[50 110]);
+    plot(1:size(all_f,2),m.*(180/pi),'b','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s].*(180/pi),'b','LineWidth',2);
+    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YTick',[],'YLim',[ymin ymax]);
     xlabel('Windows over movement','FontSize',14);
     
     ax1_pos = get(ax1,'Position'); % store position of first axes
@@ -515,26 +740,27 @@ if 1
     
     m = mean(all_f,1);
     s = std(all_f,1)./sqrt(size(all_f,1));
-    plot(1:length(all_f),m,'k','LineWidth',2);
-    plot([1:length(all_f);1:length(all_f)],[m-s; m+s],'k','LineWidth',2);
+    plot(1:size(all_f,2),m,'k','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s],'k','LineWidth',2);
     set(ax2,'XLim',[0 length(all_f)+1],'Box','off','XTick',[],'FontSize',14,'YLim',[0 2.5]);
     ylabel('mean dForce','FontSize',14);
     
     title('Mihili','FontSize',14);
     
+% temp_dpd = reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi);
+% temp_f = reshape(all_f,1,size(all_f,2)*size(all_f,1));
+% temp_f = temp_f(temp_dpd > 0);
+% temp_dpd = temp_dpd(temp_dpd > 0);
+% hold all;
+%     plot(temp_f,temp_dpd,'ro','LineWidth',2);
+%     set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 3],'YLim',[30 150]);
+%     xlabel('Change in Force','FontSize',14);
+%     ylabel('dPD','FontSize',14);
+%     monkey_dpd = [monkey_dpd, temp_dpd];
+%     monkey_f = [monkey_f, temp_f];
+%     % fit regression line
+%     [b,bint,~,~,stats] = regress(monkey_dpd',[ones(length(monkey_f),1) monkey_f']);
+%     stats
+%     plot(monkey_f,(b(1)+b(2)*monkey_f),'k','LineWidth',2);
+    
 end
-
-%%
-%         for unit = 1:num_neurons
-%             figure;
-%             hold all;
-%             idx = strcmpi({trial_data.epoch},'BL');
-%             plot(theta(idx & ~bad_trials),fr(idx & ~bad_trials,unit),'o')
-%             idx = find(strcmpi({trial_data.epoch},'AD') & ~bad_trials);
-%             idx = idx(floor(0.33*length(idx))+1:floor(1*length(idx)));
-%             plot(theta(idx),fr(idx,unit),'o')
-%             idx = strcmpi({trial_data.epoch},'WO');
-%             plot(theta(idx & ~bad_trials),fr(idx & ~bad_trials,unit),'o')
-%             pause;
-%             close all;
-%         end
