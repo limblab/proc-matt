@@ -10,49 +10,49 @@
 sessionList = { ...
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Mr T
-%     'MrT','2013-08-19','FF','CO'; ...   %1  S(M+P) - 0.15 1.48 CCW
-%     'MrT','2013-08-20','FF','RT'; ...   %2  S(M+P) - 0.15 1.48 CCW
-%     'MrT','2013-08-21','FF','CO'; ...   %3  S(M+P) - 0.15 1.48 CCW - AD is split in two. This was stitched together.
-%     'MrT','2013-08-22','FF','RT'; ...   %4  S(M+P) - 0.15 1.48 CCW
-%     'MrT','2013-08-23','FF','CO'; ...   %5  S(M+P) - 0.15 1.48 CCW
-%     'MrT','2013-08-30','FF','RT'; ...   %6  S(M+P) - 0.15 1.48 CCW
-%     'MrT','2013-09-03','VR','CO'; ...   %7  S(M+P) - 30 CCW
-%     'MrT','2013-09-04','VR','RT'; ...   %8  S(M+P) - 30 CCW
-%     'MrT','2013-09-05','VR','CO'; ...   %9  S(M+P) - 30 CCW
-%     'MrT','2013-09-06','VR','RT'; ...   %10 S(M+P) - 30 CCW
-%     'MrT','2013-09-09','VR','CO'; ...   %11 S(M+P) - 30 CCW
-%     'MrT','2013-09-10','VR','RT'; ...   %12 S(M+P) - 30 CCW
+    'MrT','2013-08-19','FF','CO'; ...   %1  S(M+P) - 0.15 1.48 CCW
+    'MrT','2013-08-20','FF','RT'; ...   %2  S(M+P) - 0.15 1.48 CCW
+    'MrT','2013-08-21','FF','CO'; ...   %3  S(M+P) - 0.15 1.48 CCW - AD is split in two. This was stitched together.
+    'MrT','2013-08-22','FF','RT'; ...   %4  S(M+P) - 0.15 1.48 CCW
+    'MrT','2013-08-23','FF','CO'; ...   %5  S(M+P) - 0.15 1.48 CCW
+    'MrT','2013-08-30','FF','RT'; ...   %6  S(M+P) - 0.15 1.48 CCW
+    'MrT','2013-09-03','VR','CO'; ...   %7  S(M+P) - 30 CCW
+    'MrT','2013-09-04','VR','RT'; ...   %8  S(M+P) - 30 CCW
+    'MrT','2013-09-05','VR','CO'; ...   %9  S(M+P) - 30 CCW
+    'MrT','2013-09-06','VR','RT'; ...   %10 S(M+P) - 30 CCW
+    'MrT','2013-09-09','VR','CO'; ...   %11 S(M+P) - 30 CCW
+    'MrT','2013-09-10','VR','RT'; ...   %12 S(M+P) - 30 CCW
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Chewie
-% % %     'Chewie','2013-10-03','VR','CO'; ... %1  S(M) - 30 CCW
-% % %     'Chewie','2013-10-09','VR','RT'; ... %2  S(M) - 30 CCW
-% % %     'Chewie','2013-10-10','VR','RT'; ... %3  S(M) ? - 30 CCW
-% % %     'Chewie','2013-10-11','VR','RT'; ... %4  S(M) ? - 30 CCW
+    'Chewie','2013-10-03','VR','CO'; ... %1  S(M) - 30 CCW
+    'Chewie','2013-10-09','VR','RT'; ... %2  S(M) - 30 CCW
+    'Chewie','2013-10-10','VR','RT'; ... %3  S(M) ? - 30 CCW
+    'Chewie','2013-10-11','VR','RT'; ... %4  S(M) ? - 30 CCW
     'Chewie','2013-10-22','FF','CO'; ... %5  S(M) - 0.15 1.48 CCW
     'Chewie','2013-10-23','FF','CO'; ... %6  S(M) - 0.15 1.48 CCW
-% % %     'Chewie','2013-10-28','FF','RT'; ... %7  S(M) ? - 0.15 1.48 CCW
-% % %     'Chewie','2013-10-29','FF','RT'; ... %8  S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-10-28','FF','RT'; ... %7  S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-10-29','FF','RT'; ... %8  S(M) ? - 0.15 1.48 CCW
     'Chewie','2013-10-31','FF','CO'; ... %9  S(M) - 0.15 1.48 CCW
     'Chewie','2013-11-01','FF','CO'; ... %10 S(M) - 0.15 1.48 CCW
     'Chewie','2013-12-03','FF','CO'; ... %11 S(M) - 0.15 1.48 CCW
     'Chewie','2013-12-04','FF','CO'; ... %12 S(M) - 0.15 1.48 CCW
-% % %     'Chewie','2013-12-09','FF','RT'; ... %13 S(M) ? - 0.15 1.48 CCW
-% % %     'Chewie','2013-12-10','FF','RT'; ... %14 S(M) ? - 0.15 1.48 CCW
-% % %     'Chewie','2013-12-12','VR','RT'; ... %15 S(M) ? - 30 CCW
-% % %     'Chewie','2013-12-13','VR','RT'; ... %16 S(M) ? - 30 CCW
-% % %     'Chewie','2013-12-17','FF','RT'; ... %17 S(M) ? - 0.15 1.48 CCW
-% % %     'Chewie','2013-12-18','FF','RT'; ... %18 S(M) ? - 0.15 1.48 CCW
-% % %     'Chewie','2013-12-19','VR','CO'; ... %19 S(M) ? - 30 CCW
-% % %     'Chewie','2013-12-20','VR','CO'; ... %20 S(M) ? - 30 CCW
-%     'Chewie','2015-03-09','CS','CO'; ... %21 S(M) ?
-%     'Chewie','2015-03-11','CS','CO'; ... %22 S(M) ?
-%     'Chewie','2015-03-12','CS','CO'; ... %23 S(M) ?
-%     'Chewie','2015-03-13','CS','CO'; ... %24 S(M) ?
-% % %     'Chewie','2015-03-16','CS','RT'; ... %25 S(M) ?
-% % %     'Chewie','2015-03-17','CS','RT'; ... %26 S(M) ?
-% % %     'Chewie','2015-03-18','CS','RT'; ... %27 S(M) ?
-%     'Chewie','2015-03-19','CS','CO'; ... %28 S(M) ?
-% % %     'Chewie','2015-03-20','CS','RT'; ... %29 S(M) ?
+    'Chewie','2013-12-09','FF','RT'; ... %13 S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-12-10','FF','RT'; ... %14 S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-12-12','VR','RT'; ... %15 S(M) ? - 30 CCW
+    'Chewie','2013-12-13','VR','RT'; ... %16 S(M) ? - 30 CCW
+    'Chewie','2013-12-17','FF','RT'; ... %17 S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-12-18','FF','RT'; ... %18 S(M) ? - 0.15 1.48 CCW
+    'Chewie','2013-12-19','VR','CO'; ... %19 S(M) ? - 30 CCW
+    'Chewie','2013-12-20','VR','CO'; ... %20 S(M) ? - 30 CCW
+    'Chewie','2015-03-09','CS','CO'; ... %21 S(M) ?
+    'Chewie','2015-03-11','CS','CO'; ... %22 S(M) ?
+    'Chewie','2015-03-12','CS','CO'; ... %23 S(M) ?
+    'Chewie','2015-03-13','CS','CO'; ... %24 S(M) ?
+    'Chewie','2015-03-16','CS','RT'; ... %25 S(M) ?
+    'Chewie','2015-03-17','CS','RT'; ... %26 S(M) ?
+    'Chewie','2015-03-18','CS','RT'; ... %27 S(M) ?
+    'Chewie','2015-03-19','CS','CO'; ... %28 S(M) ?
+    'Chewie','2015-03-20','CS','RT'; ... %29 S(M) ?
     'Chewie','2015-06-29','FF','CO'; ... %30 S(M) - 0.15 1.48 CW - SHORT WASHOUT
     'Chewie','2015-06-30','FF','CO'; ... %31 S(M) - 0.15 1.48 CW
     'Chewie','2015-07-01','FF','CO'; ... %32 S(M) - 0.15 1.48 CCW
@@ -60,60 +60,61 @@ sessionList = { ...
     'Chewie','2015-07-06','FF','CO'; ... %34 S(M) - 0.15 1.48 CW
     'Chewie','2015-07-07','FF','CO'; ... %35 S(M) - 0.15 1.48 CW
     'Chewie','2015-07-08','FF','CO'; ... %36 S(M) - 0.15 1.48 CW
-% % %     'Chewie','2015-07-09','VR','CO'; ... %37 S(M) ? - 30 CW
-% % %     'Chewie','2015-07-10','VR','CO'; ... %38 S(M) ? - 30 CW
-% % %     'Chewie','2015-07-13','VR','CO'; ... %39 S(M) ? - 30 CW
-% % %     'Chewie','2015-07-14','VR','CO'; ... %40 S(M) ? - 30 CCW
-% % %     'Chewie','2015-07-15','VR','CO'; ... %41 S(M) ? - 30 CCW
-% % %     'Chewie','2015-07-16','VR','CO'; ... %42 S(M) ? - 30 CCW
-% % %     'Chewie','2015-11-09','GR','CO'; ... %43 S(M) - 30 CCW in 120 trials
-% % %     'Chewie','2015-11-10','GR','CO'; ... %44 S(M) - 30 CCW in 120 trials
-% % %     'Chewie','2015-11-12','GR','CO'; ... %45 S(M) - 30 CW in 120 trials
-% % %     'Chewie','2015-11-13','GR','CO'; ... %46 S(M) - 30 CCW in 240 trials
-% % %     'Chewie','2015-11-16','GR','CO'; ... %47 S(M) - 30 CCW in 240 trials
-% % %     'Chewie','2015-11-17','GR','CO'; ... %48 S(M) - 30 CCW in 240 trials
-% % %     'Chewie','2015-11-18','GR','CO'; ... %49 S(M) - 30 CCW in 240 trials. Smaller target size.
-% % %     'Chewie','2015-11-19','VR','CO'; ... %50 S(M) - 60 CCW
-% % %     'Chewie','2015-11-20','GR','CO'; ... %51 S(M) - 30 CCW in 400 trials
-% % %     'Chewie','2015-12-01','VR','CO'; ... %52 S(M) - 45 CCW
-% % %     'Chewie','2015-12-03','VR','CO'; ... %53 S(M) - 60 CCW
-% % %     'Chewie','2015-12-04','VR','CO'; ... %54 S(M) - 45 CCW
+    'Chewie','2015-07-09','VR','CO'; ... %37 S(M) ? - 30 CW
+    'Chewie','2015-07-10','VR','CO'; ... %38 S(M) ? - 30 CW
+    'Chewie','2015-07-13','VR','CO'; ... %39 S(M) ? - 30 CW
+    'Chewie','2015-07-14','VR','CO'; ... %40 S(M) ? - 30 CCW
+    'Chewie','2015-07-15','VR','CO'; ... %41 S(M) ? - 30 CCW
+    'Chewie','2015-07-16','VR','CO'; ... %42 S(M) ? - 30 CCW
+    'Chewie','2015-11-09','GR','CO'; ... %43 S(M) - 30 CCW in 120 trials
+    'Chewie','2015-11-10','GR','CO'; ... %44 S(M) - 30 CCW in 120 trials
+    'Chewie','2015-11-12','GR','CO'; ... %45 S(M) - 30 CW in 120 trials
+    'Chewie','2015-11-13','GR','CO'; ... %46 S(M) - 30 CCW in 240 trials
+    'Chewie','2015-11-16','GR','CO'; ... %47 S(M) - 30 CCW in 240 trials
+    'Chewie','2015-11-17','GR','CO'; ... %48 S(M) - 30 CCW in 240 trials
+    'Chewie','2015-11-18','GR','CO'; ... %49 S(M) - 30 CCW in 240 trials. Smaller target size.
+%     'Chewie','2015-11-19','VR','CO'; ... %50 S(M) - 60 CCW
+%     'Chewie','2015-11-20','GR','CO'; ... %51 S(M) - 30 CCW in 400 trials
+%     'Chewie','2015-12-01','VR','CO'; ... %52 S(M) - 45 CCW
+%     'Chewie','2015-12-03','VR','CO'; ... %53 S(M) - 60 CCW
+%     'Chewie','2015-12-04','VR','CO'; ... %54 S(M) - 45 CCW
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Mihili
-% % %     'Mihili','2014-01-14','VR','RT'; ...    %1  S(M+P) ? - 30 CCW
-% % %     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M+P) ? - 30 CCW
-% % %     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M+P) ? - 30 CCW
-% % %     'Mihili','2014-02-14','FF','RT'; ...    %5  S(M+P) ? - 0.15 1.48 CCW
+    'Mihili','2014-01-14','VR','RT'; ...    %1  S(M+P) ? - 30 CCW
+    'Mihili','2014-01-15','VR','RT'; ...    %2  S(M+P) ? - 30 CCW
+    'Mihili','2014-01-16','VR','RT'; ...    %3  S(M+P) ? - 30 CCW
+    'Mihili','2014-02-14','FF','RT'; ...    %5  S(M+P) ? - 0.15 1.48 CCW
     'Mihili','2014-02-17','FF','CO'; ...    %6  S(M+P) P? - 0.15 1.48 CCW
     'Mihili','2014-02-18','FF','CO'; ...    %7  S(M+P) P? - 0.15 1.48 CCW
-% % %     'Mihili','2014-02-21','FF','RT'; ...    %9  S(M+P) ? - 0.15 1.48 CCW
-% % %     'Mihili','2014-02-24','FF','RT'; ...    %10 S(M+P) ? - 0.15 1.48 CCW
-% % %     'Mihili','2014-03-03','VR','CO'; ...    %12 S(M+P) ? - 30 CCW
-% % %     'Mihili','2014-03-04','VR','CO'; ...    %13 S(M+P) ? - 30 CCW
-% % %     'Mihili','2014-03-06','VR','CO'; ...    %14 S(M+P) ? - 30 CCW
+    'Mihili','2014-02-21','FF','RT'; ...    %9  S(M+P) ? - 0.15 1.48 CCW
+    'Mihili','2014-02-24','FF','RT'; ...    %10 S(M+P) ? - 0.15 1.48 CCW
+    'Mihili','2014-03-03','VR','CO'; ...    %12 S(M+P) ? - 30 CCW
+    'Mihili','2014-03-04','VR','CO'; ...    %13 S(M+P) ? - 30 CCW
+    'Mihili','2014-03-06','VR','CO'; ...    %14 S(M+P) ? - 30 CCW
     'Mihili','2014-03-07','FF','CO'; ...    %15 S(M+P) P? - 0.15 1.48 CCW
-%     'Mihili','2014-06-26','CS','CO'; ...    %16 S(M+P) ?
-%     'Mihili','2014-06-27','CS','CO'; ...    %17 S(M+P) ?
-%     'Mihili','2014-09-29','CS','CO'; ...    %18 S(M+P) ?
-%     'Mihili','2014-12-03','CS','CO'; ...    %19 S(M)   ?
-%     'Mihili','2015-05-11','CS','CO'; ...    %21 S(M+P) ?
-%     'Mihili','2015-05-12','CS','CO'; ...    %22 S(M+P) ?
+    'Mihili','2014-06-26','CS','CO'; ...    %16 S(M+P) ?
+    'Mihili','2014-06-27','CS','CO'; ...    %17 S(M+P) ?
+    'Mihili','2014-09-29','CS','CO'; ...    %18 S(M+P) ?
+    'Mihili','2014-12-03','CS','CO'; ...    %19 S(M)   ?
+    'Mihili','2015-05-11','CS','CO'; ...    %21 S(M+P) ?
+    'Mihili','2015-05-12','CS','CO'; ...    %22 S(M+P) ?
     'Mihili','2015-06-10','FF','CO'; ...    %23 S(M+P) P? - 0.15 1.48 CW - SHORT WASHOUT
     'Mihili','2015-06-11','FF','CO'; ...    %24 S(M+P) P? - 0.15 1.48 CCW - SHORT WASHOUT
     'Mihili','2015-06-15','FF','CO'; ...    %26 S(M+P) P? - 0.15 1.48 CW - SOMETHING SEEMED WEIRD IN PMd POPULATION BUT M1 IS GOOD... LOOK INTO THIS, MATT
     'Mihili','2015-06-16','FF','CO'; ...    %27 S(M+P) P? - 0.15 1.48 CW
-% % %     'Mihili','2015-06-23','VR','CO'; ...    %29 S(M+P) ? - 30 CW
-% % %     'Mihili','2015-06-25','VR','CO'; ...    %30 S(M+P) ? - 30 CW
-% % %     'Mihili','2015-06-26','VR','CO'; ...    %31 S(M+P) ? - 30 CW
-    'Mihili','2014-02-03','FF','CO'; ...    %4  S(M+P) ? - A fairly garbage session because he didn't complete reaches to a target
-    'Mihili','2015-06-17','FF','CO'; ...    %28 S(M+P) ? - A fairly garbage session because he didn't complete reaches to a target
+    'Mihili','2015-06-23','VR','CO'; ...    %29 S(M+P) ? - 30 CW
+    'Mihili','2015-06-25','VR','CO'; ...    %30 S(M+P) ? - 30 CW
+    'Mihili','2015-06-26','VR','CO'; ...    %31 S(M+P) ? - 30 CW
+    'Mihili','2014-02-03','FF','CO'; ...    %4  S(M+P) ? - 0.15 1.48 CCW - A fairly garbage session because he didn't complete reaches to a target
+    'Mihili','2015-06-17','FF','CO'; ...    %28 S(M+P) ? - 0.15 1.48 CCW - A fairly garbage session because he didn't complete reaches to a target
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%% Jaco
-%     'Jaco','2016-04-05','FF','CO'; ... %1 S(M) - 0.15 1.48 CCW
-%     'Jaco','2016-04-06','FF','CO'; ... %2 S(M) - 0.15 1.48 CCW
-%     'Jaco','2016-04-07','FF','CO'; ... %3 S(M) - 0.15 1.48 CW - short-ish washout
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     }; %end
+
+
+
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bad and questionable data
@@ -179,3 +180,8 @@ sessionList = { ...
 %       'Jaco','2016-02-15','CS','CO'; ...
 %       'Jaco','2016-02-17','CS','CO'; ...
 % 'Jaco','2016-02-18','CS','CO'; ...
+%    %%% Jaco CF Days
+%     'Jaco','2016-04-05','FF','CO'; ... %1 S(M) - 0.15 1.48 CCW
+%     'Jaco','2016-04-06','FF','CO'; ... %2 S(M) - 0.15 1.48 CCW
+%     'Jaco','2016-04-07','FF','CO'; ... %3 S(M) - 0.15 1.48 CW - short-ish washout
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

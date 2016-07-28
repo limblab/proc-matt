@@ -4,12 +4,16 @@ use_model = 'muscle';
 reassign_others = false;
 
 alpha = 0.05;
-comp_blocks = [1 2 3];
-num_neurons = 100;
+comp_blocks = [1 4 7];
+num_neurons = 500;
+
+min_fr = 3;
+min_weights = 0.5;
+num_plot_neurons = 190;
 
 classColors = {'k','b','r','m','g','c'};
-% root_dir = 'F:\trial_data_files\biomech_sim_results\';
-root_dir = 'F:\trial_data_files\';
+root_dir = 'F:\trial_data_files\biomech_sim_results\';
+% root_dir = 'F:\trial_data_files\';
 
 % filenames = { ...
 %     'Chewie_CO_FF_2013-10-22', ...
@@ -37,31 +41,32 @@ root_dir = 'F:\trial_data_files\';
 %     };
 
 filenames = { ...
-%     'Chewie_CO_FF_2013-10-22', ...
-%     'Chewie_CO_FF_2013-10-23', ...
-%     'Chewie_CO_FF_2013-10-31', ...
-%     'Chewie_CO_FF_2013-11-01', ...
-%     'Chewie_CO_FF_2013-12-03', ...
-%     'Chewie_CO_FF_2013-12-04', ...
+    'Chewie_CO_FF_2013-10-22', ...
+    'Chewie_CO_FF_2013-10-23', ...
+    'Chewie_CO_FF_2013-10-31', ...
+    'Chewie_CO_FF_2013-11-01', ...
+    'Chewie_CO_FF_2013-12-03', ...
+    'Chewie_CO_FF_2013-12-04', ...
     'Chewie_CO_FF_2015-07-01', ...
-%     'Chewie_CO_FF_2015-07-03', ...
-%     'Mihili_CO_FF_2014-02-03', ...
-%     'Mihili_CO_FF_2014-02-17', ...
-%     'Mihili_CO_FF_2014-02-18', ...
-%     'Mihili_CO_FF_2014-03-07', ...
-%     'Mihili_CO_FF_2015-06-11', ...
-%     'Mihili_CO_FF_2015-06-17', ...
-%         'Chewie_CO_FF_2015-06-29', ...
-%         'Chewie_CO_FF_2015-06-30', ...
-%         'Chewie_CO_FF_2015-07-06', ...
-%         'Chewie_CO_FF_2015-07-07', ...
-%         'Chewie_CO_FF_2015-07-08', ...
-%         'Mihili_CO_FF_2015-06-10', ...
-%         'Mihili_CO_FF_2015-06-15', ...
-%         'Mihili_CO_FF_2015-06-16', ...
+    'Chewie_CO_FF_2015-07-03', ...
+    'Mihili_CO_FF_2014-02-03', ...
+    'Mihili_CO_FF_2014-02-17', ...
+    'Mihili_CO_FF_2014-02-18', ...
+    'Mihili_CO_FF_2014-03-07', ...
+    'Mihili_CO_FF_2015-06-11', ...
+    'Mihili_CO_FF_2015-06-17', ...
+    'Chewie_CO_FF_2015-06-29', ...
+    'Chewie_CO_FF_2015-06-30', ...
+    'Chewie_CO_FF_2015-07-06', ...
+    'Chewie_CO_FF_2015-07-07', ...
+    'Chewie_CO_FF_2015-07-08', ...
+    'Mihili_CO_FF_2015-06-10', ...
+    'Mihili_CO_FF_2015-06-15', ...
+    'Mihili_CO_FF_2015-06-16', ...
     };
 
-[dpd_ad, dpd_wo, dpd_adwo, ddom_ad, cell_classes, bl_avg, bl_dom, bl_r2, bl_cb,bl_pd,tuned_cells,cell_tuning_idx,cell_tcs] = deal([]);
+[dpd_ad, dpd_wo, dpd_adwo, ddom_ad, cell_classes, bl_avg, bl_dom, bl_r2, bl_cb,bl_pd,tuned_cells,cell_tuning_idx,cell_tcs,all_weights] = deal([]);
+num_cells = zeros(1,length(filenames));
 for iFile = 1:length(filenames)
     load([root_dir filenames{iFile} '_results.mat'],'tc_data','neural_tcs','params');
     
@@ -102,6 +107,8 @@ for iFile = 1:length(filenames)
         end
     end
     
+    num_cells(iFile) = sum(mean(tc_data(1).muscle.boot_bos,2)+mean(tc_data(1).muscle.boot_mds,2) > min_fr & sum(abs(neural_tcs.muscle(:,2:end)),2) > min_weights & any(neural_tcs.muscle(:,2:end) > 0,2));
+    all_weights = [all_weights; sum(abs(neural_tcs.muscle(:,2:end)),2)];
     
     %     mean(tc_data(1).(use_model).rs,2) > 0.5 & ...
     is_tuned = all(prctile(tc_data(comp_blocks(1)).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
@@ -127,7 +134,7 @@ for iFile = 1:length(filenames)
     
     if mean(temp) < 0
         disp('FLIPPING');
-%         temp = -temp;
+        temp = -temp;
     end
     
     dpd_ad = [dpd_ad; temp];
@@ -148,8 +155,8 @@ for iFile = 1:length(filenames)
         for i = 1:size(tc_data(1).(use_model).boot_pds,1)
             cb = prctile(angleDiff(tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),tc_data(all_perms(j,2)).(use_model).boot_pds(i,:),true,true),100*[alpha/2,1-alpha/2],2);
 %             cb = prctile(tc_data(all_perms(j,2)).(use_model).boot_pds(i,:)-tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),100*[alpha/2,1-alpha/2],2);
-            
-            if isempty(range_intersection([0 0],cb))
+
+            if isempty(range_intersection([0 0],cb)) || (abs(temp(i)) > 150*pi/180 && j == 1) || (abs(temp(i)) > 150*pi/180 && j == 3)
                 is_diff(i,j) = 1;
             end
         end
@@ -192,6 +199,7 @@ if reassign_others
     cell_classes(idx) = 2;
 end
 
+
 tuned_cells = logical(tuned_cells);
 
 bl_pd = bl_pd(tuned_cells);
@@ -214,8 +222,14 @@ figure('Position',[300 50 950 950]);
 subplot1(2,2,'Gap',[0 0]);
 subplot1(3);
 hold all;
-% plot(dpd_ad.*(180/pi),dpd_wo.*(180/pi),'d','LineWidth',2);
-for i  = 1:length(dpd_ad)
+
+if strcmpi(num_plot_neurons,'all')
+    temp_dpd = 1:length(dpd_ad);
+else
+    temp_dpd = randi(length(dpd_ad),1,num_plot_neurons);
+end
+
+for i  = temp_dpd
     plot(dpd_ad(i).*(180/pi),dpd_wo(i).*(180/pi),'d','LineWidth',2,'Color',classColors{cell_classes(i)});
 end
 plot([-180,180],[0 0],'k--','LineWidth',1);
@@ -295,11 +309,11 @@ filenames = { ...
     'Chewie_CO_FF_2013-12-04', ...
     'Chewie_CO_FF_2015-07-01', ...
     'Chewie_CO_FF_2015-07-03', ...
-    %     'Chewie_CO_FF_2015-06-29', ...
-    %     'Chewie_CO_FF_2015-06-30', ...
-    %     'Chewie_CO_FF_2015-07-06', ...
-    %     'Chewie_CO_FF_2015-07-07', ...
-    %     'Chewie_CO_FF_2015-07-08', ...
+        'Chewie_CO_FF_2015-06-29', ...
+        'Chewie_CO_FF_2015-06-30', ...
+        'Chewie_CO_FF_2015-07-06', ...
+        'Chewie_CO_FF_2015-07-07', ...
+        'Chewie_CO_FF_2015-07-08', ...
     };
 
 
@@ -352,9 +366,9 @@ filenames = { ...
     'Mihili_CO_FF_2014-03-07', ...
     'Mihili_CO_FF_2015-06-11', ...
     'Mihili_CO_FF_2015-06-17', ...
-    %     'Mihili_CO_FF_2015-06-10', ...
-    %     'Mihili_CO_FF_2015-06-15', ...
-    %     'Mihili_CO_FF_2015-06-16', ...
+        'Mihili_CO_FF_2015-06-10', ...
+        'Mihili_CO_FF_2015-06-15', ...
+        'Mihili_CO_FF_2015-06-16', ...
     };
 
 
@@ -420,7 +434,7 @@ reassign_others = false;
 
 alpha = 0.05;
 class_blocks = {[1 2 5],[1 3 6],[1 4 7]};
-num_neurons = 100;
+% num_neurons = 200;
 
 classColors = {'k','b','r','m','g','c'};
 
@@ -441,14 +455,14 @@ filenames = { ...
     'Mihili_CO_FF_2014-03-07', ...
     'Mihili_CO_FF_2015-06-11', ...
     'Mihili_CO_FF_2015-06-17', ...
-    %     'Chewie_CO_FF_2015-06-29', ...
-    %     'Chewie_CO_FF_2015-06-30', ...
-    %     'Chewie_CO_FF_2015-07-06', ...
-    %     'Chewie_CO_FF_2015-07-07', ...
-    %     'Chewie_CO_FF_2015-07-08', ...
-    %     'Mihili_CO_FF_2015-06-10', ...
-    %     'Mihili_CO_FF_2015-06-15', ...
-    %     'Mihili_CO_FF_2015-06-16', ...
+        'Chewie_CO_FF_2015-06-29', ...
+        'Chewie_CO_FF_2015-06-30', ...
+        'Chewie_CO_FF_2015-07-06', ...
+        'Chewie_CO_FF_2015-07-07', ...
+        'Chewie_CO_FF_2015-07-08', ...
+        'Mihili_CO_FF_2015-06-10', ...
+        'Mihili_CO_FF_2015-06-15', ...
+        'Mihili_CO_FF_2015-06-16', ...
     };
 
 figure; hold all;
@@ -490,9 +504,9 @@ for iBlock = 1:3
                 cb = prctile(angleDiff(tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),tc_data(all_perms(j,2)).(use_model).boot_pds(i,:),true,true),100*[alpha/2,1-alpha/2],2);
                 %cb = prctile(tc_data(all_perms(j,2)).(use_model).boot_pds(i,:)-tc_data(all_perms(j,1)).(use_model).boot_pds(i,:),100*[alpha/2,1-alpha/2],2);
                 
-                if isempty(range_intersection([0 0],cb))
-                    is_diff(i,j) = 1;
-                end
+                if isempty(range_intersection([0 0],cb)) || (abs(temp(i)) > 150*pi/180 && j == 1) || (abs(temp(i)) > 150*pi/180 && j == 3)
+                is_diff(i,j) = 1;
+            end
             end
         end
         
@@ -553,13 +567,12 @@ if 1
     use_model = 'muscle';
     doMD = false;
     
-    ymin = 45;
-    ymax = 135;
+    ymin = 50;
+    ymax = 130;
     
     figure;
     subplot1(1,2);
-    
-    filenames = { ...
+        filenames = { ...
         'Chewie_CO_FF_2013-10-22', ...
         'Chewie_CO_FF_2013-10-23', ...
         'Chewie_CO_FF_2013-10-31', ...
@@ -568,15 +581,16 @@ if 1
         'Chewie_CO_FF_2013-12-04', ...
         'Chewie_CO_FF_2015-07-01', ...
         'Chewie_CO_FF_2015-07-03', ...
-        % 'Chewie_CO_FF_2015-06-29', ...
-        % 'Chewie_CO_FF_2015-06-30', ...
-        % 'Chewie_CO_FF_2015-07-06', ...
-        % 'Chewie_CO_FF_2015-07-07', ...
-        % 'Chewie_CO_FF_2015-07-08', ...
+%         'Chewie_CO_FF_2015-06-29', ...
+%         'Chewie_CO_FF_2015-06-30', ...
+%         'Chewie_CO_FF_2015-07-06', ...
+%         'Chewie_CO_FF_2015-07-07', ...
+%         'Chewie_CO_FF_2015-07-08', ...
         };
     
     
     for iFile = 1:length(filenames)
+        iFile
         load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
         
         %tuned_cells = mean(tc_data(1).(use_model).rs,2) > 0.5;
@@ -590,6 +604,8 @@ if 1
         if iFile == 1
             day_dpd = zeros(length(filenames),length(sw_data));
             all_dpd = cell(1,length(sw_data));
+            all_bl = cell(1,length(sw_data));
+            all_ad = cell(1,length(sw_data));
             all_f = zeros(length(filenames),length(sw_data));
         end
         
@@ -602,19 +618,22 @@ if 1
             else
                 bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,3);
                 ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,3);
-                dpd = angleDiff(bl,ad,true,false);
+                dpd = angleDiff(bl,ad,true,true);
                 day_dpd(iFile,iBlock) = circular_mean(dpd);
             end
             
             df = abs(mean(sw_data(iBlock).data(2).f) - mean(sw_data(iBlock).data(1).f));
             
             all_dpd{iBlock} = [all_dpd{iBlock}; dpd];
-            
+            all_bl{iBlock} = [all_bl{iBlock}; bl];
+            all_ad{iBlock} = [all_bl{iBlock}; ad];
             all_f(iFile,iBlock) = mean(df);
         end
     end
     
     all_dpd = cell2mat(all_dpd);
+    all_bl = cell2mat(all_bl);
+    all_ad = cell2mat(all_ad);
     
     subplot1(1);
     ax1 = gca;
@@ -625,13 +644,95 @@ if 1
             m(i) = mean(all_dpd(:,i));
             s(i) = std(all_dpd(:,i))./sqrt(length(all_dpd));
         else
-            m(i) = circular_mean(all_dpd(:,i));
+            m(i) = circular_mean((all_dpd(:,i)));
             s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
         end
     end
     
     plot(1:size(all_f,2),m.*(180/pi),'b','LineWidth',2);
     plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s].*(180/pi),'b','LineWidth',2);
+    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YLim',[ymin ymax]);
+    ylabel('mean dPD','FontSize',14);
+    xlabel('Windows over movement','FontSize',14);
+    
+        ax1_pos = get(ax1,'Position'); % store position of first axes
+    ax2 = axes('Position',ax1_pos,...
+        'YAxisLocation','right',...
+        'Color','none', ...
+        'TickDir','out');
+    hold all;
+    
+    filenames = { ...
+        'Chewie_CO_FF_2015-06-29', ...
+        'Chewie_CO_FF_2015-06-30', ...
+        'Chewie_CO_FF_2015-07-06', ...
+        'Chewie_CO_FF_2015-07-07', ...
+        'Chewie_CO_FF_2015-07-08', ...
+        };
+    
+    
+    for iFile = 1:length(filenames)
+        iFile
+        load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
+        
+        %tuned_cells = mean(tc_data(1).(use_model).rs,2) > 0.5;
+        tuned_cells = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(2).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(3).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(2).(use_model).cb{3}(:,1),tc_data(2).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(3).(use_model).cb{3}(:,1),tc_data(3).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+        
+        if iFile == 1
+            day_dpd = zeros(length(filenames),length(sw_data));
+            all_dpd = cell(1,length(sw_data));
+            all_bl = cell(1,length(sw_data));
+            all_ad = cell(1,length(sw_data));
+            all_f = zeros(length(filenames),length(sw_data));
+        end
+        
+        for iBlock = 1:length(sw_data)
+            if doMD
+                bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,2);
+                ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,2);
+                dpd = abs(ad - bl);
+                day_dpd(iFile,iBlock) = mean(dpd);
+            else
+                bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,3);
+                ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,3);
+                dpd = angleDiff(bl,ad,true,true);
+                day_dpd(iFile,iBlock) = circular_mean(dpd);
+            end
+            
+            df = abs(mean(sw_data(iBlock).data(2).f) - mean(sw_data(iBlock).data(1).f));
+            
+            all_dpd{iBlock} = [all_dpd{iBlock}; dpd];
+            all_bl{iBlock} = [all_bl{iBlock}; bl];
+            all_ad{iBlock} = [all_bl{iBlock}; ad];
+            all_f(iFile,iBlock) = mean(df);
+        end
+    end
+    
+    all_dpd = cell2mat(all_dpd);
+    all_bl = cell2mat(all_bl);
+    all_ad = cell2mat(all_ad);
+    
+    subplot1(1);
+    ax1 = gca;
+    hold all;
+    
+    for i = 1:size(all_dpd,2)
+        if doMD
+            m(i) = mean(all_dpd(:,i));
+            s(i) = std(all_dpd(:,i))./sqrt(length(all_dpd));
+        else
+            m(i) = circular_mean((all_dpd(:,i)));
+            s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
+        end
+    end
+    
+    plot(1:size(all_f,2),m.*(180/pi),'r','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s].*(180/pi),'r','LineWidth',2);
     set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YLim',[ymin ymax]);
     ylabel('mean dPD','FontSize',14);
     xlabel('Windows over movement','FontSize',14);
@@ -652,16 +753,23 @@ if 1
     
     title('Chewie','FontSize',14);
     
-    
 %     figure;
 %     plot(reshape(all_f,1,size(all_f,2)*size(all_f,1)),reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi),'bo','LineWidth',2);
 %     monkey_dpd = reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi);
 %     monkey_f = reshape(all_f,1,size(all_f,2)*size(all_f,1));
+%     drawnow;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    
-    filenames = { ...
+%     for i = 1:2:15
+%         figure;
+%         hist(all_dpd(:,i),-pi:pi/32:pi);
+%         pause;
+%         close all;
+%     end
+%     
+%     keyboard;
+      filenames = { ...
         'Mihili_CO_FF_2014-02-17', ...
         'Mihili_CO_FF_2014-02-18', ...
         'Mihili_CO_FF_2014-03-07', ...
@@ -674,6 +782,7 @@ if 1
         };
     
     for iFile = 1:length(filenames)
+        iFile
         load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
         
         tuned_cells = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
@@ -698,7 +807,7 @@ if 1
             else
                 bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,3);
                 ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,3);
-                dpd = angleDiff(bl,ad,true,false);
+                dpd = angleDiff(bl,ad,true,true);
                 day_dpd(iFile,iBlock) = circular_mean(dpd);
             end
             
@@ -738,6 +847,78 @@ if 1
         'TickDir','out');
     hold all;
     
+    filenames = { ...
+        'Mihili_CO_FF_2015-06-10', ...
+        'Mihili_CO_FF_2015-06-15', ...
+        'Mihili_CO_FF_2015-06-16', ...
+        };
+    
+    for iFile = 1:length(filenames)
+        iFile
+        load([root_dir filenames{iFile} '_results.mat'],'sw_data','tc_data');
+        
+        tuned_cells = all(prctile(tc_data(1).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(2).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            all(prctile(tc_data(3).(use_model).rs,[2.5 97.5],2) > 0.5,2) & ...
+            angleDiff(tc_data(1).(use_model).cb{3}(:,1),tc_data(1).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(2).(use_model).cb{3}(:,1),tc_data(2).(use_model).cb{3}(:,2),true,false) < 40*pi/180 & ...
+            angleDiff(tc_data(3).(use_model).cb{3}(:,1),tc_data(3).(use_model).cb{3}(:,2),true,false) < 40*pi/180;
+        
+        if iFile == 1
+            day_dpd = zeros(length(filenames),length(sw_data));
+            all_dpd = cell(1,length(sw_data));
+            all_f = zeros(length(filenames),length(sw_data));
+        end
+        
+        for iBlock = 1:length(sw_data)
+            if doMD
+                bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,2);
+                ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,2);
+                dpd = abs(ad - bl);
+                day_dpd(iFile,iBlock) = mean(dpd);
+            else
+                bl = sw_data(iBlock).tc_data(1).(use_model).tc(tuned_cells,3);
+                ad = sw_data(iBlock).tc_data(2).(use_model).tc(tuned_cells,3);
+                dpd = angleDiff(bl,ad,true,true);
+                day_dpd(iFile,iBlock) = circular_mean(dpd);
+            end
+            
+            df = abs(mean(sw_data(iBlock).data(2).f) - mean(sw_data(iBlock).data(1).f));
+            
+            all_dpd{iBlock} = [all_dpd{iBlock}; dpd];
+            
+            all_f(iFile,iBlock) = mean(df);
+        end
+    end
+    
+    all_dpd = cell2mat(all_dpd);
+    
+    subplot1(2);
+    ax1 = gca;
+    hold all;
+    
+    for i = 1:size(all_dpd,2)
+        if doMD
+            m(i) = mean(all_dpd(:,i));
+            s(i) = std(all_dpd(:,i))./sqrt(length(all_dpd));
+        else
+            m(i) = circular_mean(all_dpd(:,i));
+            s(i) = circular_std(all_dpd(:,i))./sqrt(length(all_dpd));
+        end
+    end
+    
+    plot(1:size(all_f,2),m.*(180/pi),'r','LineWidth',2);
+    plot([1:size(all_f,2);1:size(all_f,2)],[m-s; m+s].*(180/pi),'r','LineWidth',2);
+    set(ax1,'XLim',[0 length(all_f)+1],'Box','off','TickDir','out','FontSize',14,'XTickLabel',[],'YTick',[],'YLim',[ymin ymax]);
+    xlabel('Windows over movement','FontSize',14);
+    
+    ax1_pos = get(ax1,'Position'); % store position of first axes
+    ax2 = axes('Position',ax1_pos,...
+        'YAxisLocation','right',...
+        'Color','none', ...
+        'TickDir','out');
+    hold all;
+    
     m = mean(all_f,1);
     s = std(all_f,1)./sqrt(size(all_f,1));
     plot(1:size(all_f,2),m,'k','LineWidth',2);
@@ -747,10 +928,13 @@ if 1
     
     title('Mihili','FontSize',14);
     
+
 % temp_dpd = reshape(day_dpd,1,size(day_dpd,2)*size(day_dpd,1)).*(180/pi);
 % temp_f = reshape(all_f,1,size(all_f,2)*size(all_f,1));
+% 
 % temp_f = temp_f(temp_dpd > 0);
 % temp_dpd = temp_dpd(temp_dpd > 0);
+% 
 % hold all;
 %     plot(temp_f,temp_dpd,'ro','LineWidth',2);
 %     set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 3],'YLim',[30 150]);

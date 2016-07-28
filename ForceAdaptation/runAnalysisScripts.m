@@ -18,7 +18,7 @@ close all;
 %   8: Cell classification summary
 %   9: trial number
 %  10: PD change periods for SfN
-whichScript = 1;
+whichScript = 3;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Now a bunch of parameters and necessary info
@@ -78,10 +78,10 @@ slidingParams.metric = 'PD';
 slidingParams.doAvg = false; % do average across sessions (mainly for group scatter plot)
 slidingParams.useVel = false; % use velocity instead of measured force
 slidingParams.useMasterTuned = true; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
-slidingParams.doAbs = true; % take absolute of difference between epochs
+slidingParams.doAbs = false; % take absolute of difference between epochs
 slidingParams.doMD = false;
 slidingParams.doMDNorm = true;
-slidingParams.plotClasses = [1,2,3,4,5];
+slidingParams.plotClasses = [2,5];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % For FR ANOVA analysis
@@ -109,52 +109,6 @@ end
 % Filter the files based on the tasks/monkeys/perturbations above
 dateInds = ismember(allFiles(:,1),useMonkeys) & ismember(allFiles(:,3),usePerts) & ismember(allFiles(:,4),useTasks);
 doFiles = allFiles(dateInds,:);
-
-%%
-% % % % outR1 = [];
-% % % % outR2 = [];
-% % % % outFR = [];
-% % % % for i = [1,4,7]
-% % % %     temp = [];
-% % % %     temp1 = [];
-% % % %     temp2 = [];
-% % % %     for iFile = 1:size(doFiles,1)
-% % % %         [tuning,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,'movement','regression','onpeak');
-% % % %
-% % % %         temp = [temp; tuning(i).bos(:,1)];
-% % % %
-% % % %         r=sort(tuning(i).r_squared,2);
-% % % %         temp1 = [temp1; r(all(c.istuned(:,1:4),2),50)];
-% % % %
-% % % %         theta = tuning(i).theta;
-% % % %         utheta = unique(theta);
-% % % %         fr = zeros(length(utheta),size(tuning(i).fr,2));
-% % % %         for iDir = 1:length(utheta)
-% % % %             fr(iDir,:) = mean(tuning(i).fr(theta==utheta(iDir),:),1);
-% % % %         end
-% % % %
-% % % %         fr = fr(:,all(c.istuned(:,1:4),2));
-% % % %
-% % % %         %
-% % % %         for unit = 1:size(fr,2)
-% % % %             [~,~,~,~,s] = regress(fr(:,unit),[ones(size(utheta)) cos(utheta) sin(utheta)]);
-% % % %             temp2 = [temp2; s(1)];
-% % % %         end
-% % % %     end
-% % % %     outR1 = [outR1 temp1];
-% % % %     outR2 = [outR2 temp2];
-% % % %     outFR = [outFR temp];
-% % % % end
-% % % %
-% % % % outT = [];
-% % % % for iFile = 1:size(doFiles,1)
-% % % %     c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,'movement','regression','onpeak');
-% % % %     outT = [outT; c.istuned(all(c.istuned(:,1:4),2),5)];
-% % % % end
-% % % %
-% % % % outR1 = outR1(all(outT,2),:);
-% % % % outR2 = outR2(all(outT,2),:);
-% % % % outFR = outFR(all(outT,2),:);
 
 %% Run the requested analysis
 switch whichScript

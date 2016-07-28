@@ -60,7 +60,7 @@ if 0
     coordinate_frame = 'movement';
     blocks = {'BL',[0 1]; 'AD',[0.33 1]};
     angle_bin_size = 45*pi/180;
-    time_delay = 0;
+    time_delay = 10;
     hold_time = 50;
     divide_time = [0.3 0.05];
     
