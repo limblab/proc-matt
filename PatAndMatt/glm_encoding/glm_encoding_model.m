@@ -1,8 +1,5 @@
 %%
 % STUFF TO DO
-%   - Train on all and test on planning/reaction/movement
-%   - Train only on planning/reaction/movement
-%   - Look only at center hold to get "baseline" interactions
 %   - PCA as input
 %   - null and potent space as input
 %   - mahalonobis distance at time (e.g. target presentation, go cue, peak
@@ -16,58 +13,71 @@ close all;
 
 dataSummary;
 
-outputSubdir = 'plan';
+outputSubdir = 'all';
 params_file = ''; % optionally give .mat file containing params to use
+% Must be in the outputSubdir
 
-monkeys = {'Chewie'};
+sessions = { ...
+%     'Chewie','2016-09-15'; ...
+    'Chewie','2016-09-19'; ...
+    'Chewie','2016-10-05'; ...
+    'Chewie','2016-10-07'; ...
+%     'Mihili','2014-02-17'; ...
+%     'Mihili','2014-02-18'; ...
+%     'Mihili','2014-03-07'; ...
+%     'Mihili','2015-06-15'; ...
+%     'Mihili','2015-06-16'; ...
+%     'Mihili','2015-06-17'; ...
+    };
+
+monkeys = unique(sessions(:,1));
 tasks = {'CO'};
 perts = {'FF'};
-% dates = {'2016-09-19','2016-10-05','2016-09-15','2016-10-07'};
-
+dates = sessions(:,2);
 % {COVARIATE, PREDICTED}, will loop along rows
-% array_pairs = {'PMd','PMd';'PMd','M1';'M1','M1'};
-
-dates = {'2016-09-15'};
-array_pairs = {'PMd','M1'};
+% array_pairs = {'PMd','M1';'PMd','PMd';'M1','M1'};
+array_pairs = {'PMd','PMd'};
 
 %%
 if isempty(params_file)
-    result_codes        = {'R','I'}; % which trials to include
-    
-    cv_folds            = 10; % how many folds for cross-validation
-    
-    num_blocks_bl       = 0; % how many BL blocks to exclude for testing
-%     training_data       = {'BL','all'; ...
-%                            'WO','all'};
-    block_size_testing  = 4; % size of blocks in # trials for AD/WO
-    % note: can change this and still reload CV
-    
     dt                  = 0.01; % time step size for data
     bin_size            = 5;    % how many samples to group together when rebinning (bin width is num_samples*dt)
     
-    block_size_fr_test  = 100;   % how many trials to group for FR test
-    fr_test_alpha       = 1e-3; % p value cut off for t-test
-    fr_min              = 0.5; % minimum session-wide spiking for inclusion
+    result_codes        = {'R'}; % which trials to include
+    
+    training_data       = {'BL','all'};
+    testing_data        = {'AD','all'; ...
+                           'WO','all'};
+    block_size_testing  = 1; % size of blocks in # trials for AD/WO
+    % note: can change this and still reload CV
     
     % how to truncate trials {idx name, number of bins after}
-    train_start_idx     = {'idx_target_on',-2};
-    train_end_idx       = {'idx_trial_end',2}; %{'idx_go_cue',4}
-    test_start_idx      = {'idx_target_on',-2}; % NOTE: CAN CHANGE THESE
-    test_end_idx        = {'idx_trial_end',2}; %   AND STILL RELOAD CV
+    train_start_idx     = {'idx_target_on',0}; %{'idx_target_on',-4}
+    train_end_idx       = {'idx_trial_end',-2}; %{'idx_go_cue',4}
+    test_start_idx      = {'idx_target_on',0}; % NOTE: CAN CHANGE THESE
+    test_end_idx        = {'idx_trial_end',-2}; %   AND STILL RELOAD CV
     %   NOTE: this is after rebinning at the moment
     
-    do_lasso            = true;  % if you want to regularize
+    cv_folds            = 10; % how many folds for cross-validation
+    cv_rand             = true; % whether to randomly select CV datapoints
+    
+    block_size_fr_test  = 100;   % how many trials to group for FR test
+    fr_test_alpha       = 1e-3; % p value cut off for t-test
+    fr_min              = 0.3; % minimum session-wide spiking for inclusion
+    
+    do_lasso            = false;  % if you want to regularize
     lasso_lambda        = 0.0083; % lambda parameter for lasso
     lasso_alpha         = 0.01;   % alpha parameter for lasso
     
-    do_pca              = true; % include PCA as covariates instead of spikes
-    pca_dims            = 1:30; % 'all' or specify which dimensions, e.g. 1:30
+    do_pca              = false; % include PCA as covariates instead of spikes
+    pca_dims            = 'all'; % 'all' or specify which dimensions, e.g. 1:30
     
     do_rcb              = true;  % use raised cosine basis functions for history
     do_all_history      = false; % include history for all units
+    do_self_history     = false;
     unit_lags           = 2;     % how many bins in the past for each neuron to include as covariates (if ~do_rcb)
-    rcb_hpeaks          = [dt*bin_size,2*dt*bin_size];
-    rcb_b               = 0.2;
+    rcb_hpeaks          = [dt*bin_size,0.1];
+    rcb_b               = 0.1;
     %   NOTE: this is after rebinning at the moment
     
     kin_signals         = {'pos','vel','speed'}; % names of kinematic covariates
@@ -84,6 +94,15 @@ else % load up params from whatever file
     end, clear i good_cells cov_array pred_array pert epochs pca_w;
 end
 
+%% Here is where I check all of the inputs
+if bin_size < 1 || block_size_testing < 1
+    error('Invalid bin size or testing block size');
+elseif bin_size == 1
+    disp('---------------------------------------------------------')
+    disp('BIN SIZE IS 1... SOMETIMES THIS CRASHES THINGS. CONTINUE?');
+    disp('---------------------------------------------------------')
+    pause;
+end
 
 %%
 if ~exist(fullfile(rootDir,TDDir,outputSubdir),'dir')
@@ -112,8 +131,8 @@ for idx_pert = 1:length(perts)
         
         for idx_file = 1:length(use_files)
             disp(['File ' num2str(idx_file) ' of ' num2str(length(use_files)) '...'])
-            close all;
-            figure;
+%             close all;
+%             figure;
             
             epochs = filedb.Epochs{use_files(idx_file)};
             
@@ -122,14 +141,17 @@ for idx_pert = 1:length(perts)
             clear params;
             params.cov_array = cov_array;
             params.pred_array = pred_array;
-            params.num_blocks_bl = num_blocks_bl;
+            params.training_data = training_data;
+            params.testing_data = testing_data;
             params.block_size_fr_test = block_size_fr_test;
             params.fr_test_alpha = fr_test_alpha;
             params.fr_min = fr_min;
             params.dt = dt;
             params.bin_size = bin_size;
             params.cv_folds = cv_folds;
+            params.cv_rand = cv_rand;
             params.do_rcb = do_rcb;
+            params.do_self_history = do_self_history;
             params.do_all_history = do_all_history;
             if do_rcb
                 params.rcb_hpeaks = rcb_hpeaks;
@@ -274,7 +296,18 @@ for idx_pert = 1:length(perts)
                 tic;
                 trial_data = convBasisFunc(trial_data,params);
                 toc;
+                
+                for i = 1:length(kin_signals)
+                    % shift kinematics by kin_lags backwards
+                    for j = 1:length(trial_data)
+                        temp = trial_data(j).(kin_signals{i});
+                        trial_data(j).(kin_signals{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+                        temp = trial_data(j).([kin_signals{i} '_shift']);
+                        trial_data(j).([kin_signals{i} '_shift']) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+                    end
+                end                
             else
+                error('FIX KINEMATIC SHIFT');
                 if unit_lags > 0
                     % Duplicate and shift
                     build_inputs = cell(1,2*(length(kin_signals) + length(arrays)));
@@ -295,40 +328,29 @@ for idx_pert = 1:length(perts)
             
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % filter out trials
-            trial_data = trial_data(ismember({trial_data.result},result_codes));
-            
-            train_trials = find(strcmpi({trial_data.epoch},'BL'));
-            test_trials_bl = train_trials(end-num_blocks_bl*block_size_testing+1:end);
-            train_trials = train_trials(1:end-num_blocks_bl*block_size_testing);
-            
-            % get testing indices throughout AD and WO
-            test_trials_ad = (1:sum(strcmpi({trial_data.epoch},'AD')))';
-            test_trials_ad = reshape(test_trials_ad(1:end-rem(length(test_trials_ad),block_size_testing)),block_size_testing,(length(test_trials_ad) - rem(length(test_trials_ad),block_size_testing))/block_size_testing)';
-            test_trials_wo = (1:sum(strcmpi({trial_data.epoch},'WO')))';
-            test_trials_wo = reshape(test_trials_wo(1:end-rem(length(test_trials_wo),block_size_testing)),block_size_testing,(length(test_trials_wo) - rem(length(test_trials_wo),block_size_testing))/block_size_testing)';
-            
-            bl_inds = find(strcmpi({trial_data.epoch},'bl'));
-            ad_inds = find(strcmpi({trial_data.epoch},'ad'));
-            wo_inds = find(strcmpi({trial_data.epoch},'wo'));
-            
-            if block_size_testing == 1 % need to get sizing correct
-                bl_inds = bl_inds'; ad_inds = ad_inds'; wo_inds = wo_inds';
+            % filter trials and partition testing/training sets
+            if isfield(trial_data,'result') % old format didn't include result and only had 'R'
+                disp('Result not found. All trials are reward trials.');
+                trial_data = trial_data(ismember({trial_data.result},result_codes));
             end
-            
-            test_trials = [bl_inds(test_trials_bl); ...
-                ad_inds(test_trials_ad); ...
-                wo_inds(test_trials_wo)];
-            
-            [num_bl,num_ad,num_wo] = deal(0);
-            if ~isempty(test_trials_bl), num_bl = size(test_trials_bl,1); end
-            if ~isempty(test_trials_ad), num_ad = size(test_trials_ad,1); end
-            if ~isempty(test_trials_wo), num_wo = size(test_trials_wo,1); end
-            test_epochs = [repmat({'BL'},num_bl,1); ...
-                repmat({'AD'},num_ad,1); ...
-                repmat({'WO'},num_wo,1)];
-            clear testing_idx_bl testing_idx_ad testing_idx_wo bl_inds ad_inds wo_inds num_bl num_ad num_wo;
-            
+            [train_trials,test_trials, test_epochs] = deal([]);
+            for iBlock = 1:size(training_data,1)
+                temp = find(strcmpi({trial_data.epoch},training_data{iBlock,1}));
+                if ischar(training_data{iBlock,2}) % use all
+                    train_trials = [train_trials, temp];
+                else
+                    train_trials = [train_trials, temp( 1+floor(length(temp)*training_data{iBlock,2}(1)):floor(length(temp)*training_data{iBlock,2}(2)) )];
+                end
+            end
+            for iBlock = 1:size(testing_data,1)
+                temp = find(strcmpi({trial_data.epoch},testing_data{iBlock,1}));
+                if ~ischar(testing_data{iBlock,2}) % use all
+                    temp = temp( 1+floor(length(temp)*testing_data{iBlock,2}(1)):floor(length(temp)*testing_data{iBlock,2}(2)) );
+                end
+                temp = reshape(temp(1:end-rem(length(temp),block_size_testing)),block_size_testing,(length(temp) - rem(length(temp),block_size_testing))/block_size_testing)';
+                test_trials = [test_trials; temp];
+                test_epochs = [test_epochs; repmat(testing_data{iBlock,1},size(temp,1),1)];
+            end
             params.train_trials = train_trials;
             params.test_trials = test_trials;
             params.test_epochs = test_epochs;
@@ -357,7 +379,7 @@ for idx_pert = 1:length(perts)
                 disp('No CV file found or parameters did not match. Running CV...');
                 [pr2_full_cv,rpr2_cv,pr2_basic_cv] = deal(NaN(num_pred_neurons,cv_folds,2));
             end
-            bl_unit_models = repmat(struct('b_basic',[],'b_full',[],'ymean',[]),num_pred_neurons,1);
+            bl_unit_models = repmat(struct('b_basic',[],'d_basic',[],'s_basic',[],'b_full',[],'d_full',[],'s_full',[],'ymean',[]),num_pred_neurons,1);
             [pr2_full,rpr2,pr2_basic] = deal(NaN(num_pred_neurons,size(test_trials,1),2));
             for unit = 1:num_pred_neurons
                 tic;
@@ -377,33 +399,41 @@ for idx_pert = 1:length(perts)
                 [y,x_full,x_basic] = glm_prep_inputs(trial_data,unit,train_trials,train_start_idx,train_end_idx,params);
                 
                 if do_lasso
+                    [b_basic,d_basic,s_basic,d_full,s_full] = deal([]);
                     [b,s] = lassoglm(x_full,y,'poisson','lambda',lasso_lambda,'alpha',lasso_alpha);
                     b_full = [s.Intercept; b];
                     if ~isempty(x_basic)
                         [b,s] = lassoglm(x_basic,y,'poisson','lambda',lasso_lambda,'alpha',lasso_alpha);
                         b_basic = [s.Intercept; b];
-                    else
-                        b_basic = [];
                     end
                 else
-                    b_full = glmfit(x_full,y,'poisson');
+                    [b_full,d_full,s_full] = glmfit(x_full,y,'poisson');
                     if ~isempty(x_basic)
-                        b_basic = glmfit(x_basic,y,'poisson');
+                        [b_basic,d_basic,s_basic] = glmfit(x_basic,y,'poisson');
                     else
-                        b_basic = [];
+                        [b_basic,d_basic,s_basic] = deal([]);
                     end
                 end
                 
                 bl_unit_models(unit).b_basic = b_basic;
+                bl_unit_models(unit).d_basic = d_basic;
+                bl_unit_models(unit).s_basic = s_basic;
                 bl_unit_models(unit).b_full = b_full;
-                bl_unit_models(unit).ymean = mean(y);
+                bl_unit_models(unit).d_full = d_full;
+                bl_unit_models(unit).s_full = s_full;
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % Cross validate
                 if do_cv
-                    folds = linspace(1,size(y,1),cv_folds+1);
+                    
+                    if cv_rand
+                        folds = reshape(randperm(size(y,1)-rem(size(y,1),cv_folds)),[],cv_folds)';
+                    else
+                        folds = reshape(1:size(y,1)-rem(size(y,1),cv_folds),[],cv_folds)';
+                    end
+                    
                     for fold = 1:cv_folds
-                        test_idx = ceil(folds(fold)):floor(folds(fold+1));
+                        test_idx = folds(fold,:);
                         train_idx = true(1,size(y,1)); train_idx(test_idx) = false;
                         
                         y_train = y(train_idx);
@@ -476,9 +506,9 @@ for idx_pert = 1:length(perts)
                     end
                 end
                 toc;
-                subplot(1,2,1); hold all; plot(mean(pr2_full(unit,:,:),3));
-                subplot(1,2,2); hold all; plot(mean(rpr2(unit,:,:),3));
-                drawnow;
+%                 subplot(1,2,1); hold all; plot(mean(pr2_full(unit,:,:),3));
+%                 subplot(1,2,2); hold all; plot(mean(rpr2(unit,:,:),3));
+%                 drawnow;
             end % end neuron loop
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

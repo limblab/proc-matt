@@ -64,7 +64,6 @@ else
     cov_spikes_shift = [];
 end
 
-
 last_one = 0;
 for trial = idx_trial
     if ~isempty(start_idx)
@@ -136,6 +135,7 @@ if ~strcmpi(cov_array,pred_array)
             temp = trial_data(trial).([pred_array '_spikes_shift']);
             pred_spikes_shift(store_idx,:) = temp(idx,:);
         end
+
         last_one = last_one + length(idx);
     end, clear i temp bin_inds fr fr_shift;
 else

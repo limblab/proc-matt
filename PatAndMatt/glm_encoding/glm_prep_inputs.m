@@ -1,4 +1,4 @@
-function [y, x_full, x_basic] = glm_prep_inputs(trial_data,unit,trial_idx,varargin)
+function varargout = glm_prep_inputs(trial_data,unit,trial_idx,varargin)
 % trial_data: obvious
 % unit: index of predicted unit in pred_array
 % trial_idx: which trials in trial_data to include
@@ -34,6 +34,7 @@ pred_array = params.pred_array;
 do_pca = params.do_pca;
 do_rcb = params.do_rcb;
 do_all_history = params.do_all_history;
+do_self_history = params.do_self_history;
 unit_lags = params.unit_lags;
 kin_lags = params.kin_lags;
 kin_signals = params.kin_signals;
@@ -52,9 +53,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % piece together covariates
-y = pred_spikes(:,unit);
-
-
 if do_pca % get PCA space
     % square root transform 4 lyfe
     x_spikes = sqrt(cov_spikes(:,idx))*params.pca_w;
@@ -65,7 +63,6 @@ else % just use spike counts
     x_spikes = cov_spikes(:,idx);
 end
 
-
 % add shifted data as covariates if desired
 if unit_lags > 0
     % add time shifted other neurons (NO PCA AT THE MOMENT)
@@ -73,10 +70,11 @@ if unit_lags > 0
         idx_shift = repmat(idx,1,unit_lags);
         x_spikes = [x_spikes, cov_spikes_shift(:,idx_shift)];
     end
-    x_self = zeros(size(pred_spikes,1),unit_lags);
-    for lag = 1:unit_lags, x_self(:,lag) = pred_spikes_shift(:,unit+(lag-1)*size(pred_spikes,2)); end
+    if do_self_history
+        x_self = zeros(size(pred_spikes,1),unit_lags);
+        for lag = 1:unit_lags, x_self(:,lag) = pred_spikes_shift(:,unit+(lag-1)*size(pred_spikes,2)); end
+    end
 end
-
 
 if ~isempty(kin_signals)
     if do_rcb
@@ -91,5 +89,7 @@ if ~isempty(kin_signals)
     end
 end
 
-x_full = [x_self, x_kin, x_spikes];
-x_basic = [x_self, x_kin];
+varargout{1} = pred_spikes(:,unit); % y
+varargout{2} = [x_self, x_kin, x_spikes]; % x_full
+varargout{3} = [x_self, x_kin]; % x_basic
+
