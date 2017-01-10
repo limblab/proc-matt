@@ -5,25 +5,15 @@ function load_success = makeDataStruct(params, fileType, convertNEVFiles)
 % struct format.
 %
 % INPUTS:
-%   expParamFile: (string) path to file containing experimental parameters
-%   dataDir: (string) root directory where data is kept
-%   outDir: (string) root directory for output
+%   params: (struct) all the parameters from 
 %   fileType: (string) 'nev' or 'nevnsx'
 %   convertNEVFiles: (bool) whether to convert NEV files to BDF
-%   useUnsorted: (bool) whether to include unsorted units
 %
 % OUTPUTS:
-%   data: the struct with the following main fields
-%       params: experimental parameters
-%       meta: meta data about the experiment and files
-%       cont: continuously sampled data (kinematics etc)
-%       (arraynames): struct for each array name provided with neural info
-%       trial_table: table with info on each trial for the task
-%       movement_table: like trial table, but based on individual movements
-%   useUnsorted: (bool) whether unsorted spikes were included
+%   load_success: (bool) self explanatory
 %
 % NOTES:
-%   - This function will automatically write the data struct to a file, too
+%   - This function will automatically write the data struct to a file
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 
 %% sort out inputs
@@ -50,6 +40,7 @@ dataDir = params.dataDir;
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 useUnsorted = params.useUnsorted;
+shuntCheck = params.shuntCheck;
 useDate = params.exp.date;
 monkey = params.exp.monkey;
 arrays = params.exp.arrays;
@@ -79,16 +70,16 @@ for iArray = 1:length(arrays)
     switch lower(fileType)
         case 'nev'
             cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '_001-s.nev'];
-            cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
+            cerPath = fullfile(dataDir,'CerebusData',useDate);
             cerFile = fullfile(cerPath,cerName);
             
             if ~exist(cerFile,'file') % probably not sorted, so do this
                 cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '-s.nev'];
-                cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
+                cerPath = fullfile(dataDir,'CerebusData',useDate);
                 cerFile = fullfile(cerPath,cerName);
                 if ~exist(cerFile,'file') % probably not sorted, so do this
                     cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '.nev'];
-                    cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
+                    cerPath = fullfile(dataDir,'CerebusData',useDate);
                     cerFile = fullfile(cerPath,cerName);
                     if ~exist(cerFile,'file') % probably not sorted, so do this
                         load_success = 0;
@@ -97,12 +88,12 @@ for iArray = 1:length(arrays)
             end
         case 'nevnsx'
             cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '_001-s.mat'];
-            cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
+            cerPath = fullfile(dataDir,'CerebusData',useDate);
             cerFile = fullfile(cerPath,cerName);
             
             if ~exist(cerFile,'file') % probably not sorted, so do this
                 cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '-s.mat'];
-                cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
+                cerPath = fullfile(dataDir,'CerebusData',useDate);
                 cerFile = fullfile(cerPath,cerName);
                 if ~exist(cerFile,'file') % probably not sorted, so do this
                     load_success = 0;
@@ -115,7 +106,7 @@ if load_success
     
     % convert the file with continuous data into bdf if not done so
     if convertNEVFiles
-        convertDataToBDF(fullfile(dataDir,bdfArray,'CerebusData'),useDate);
+        convertDataToBDF(fullfile(dataDir,'CerebusData'),useDate);
     end
     
     %% start building the structs, new file for each epoch
@@ -137,7 +128,7 @@ if load_success
         bdfName = [monkey '_' bdfArray '_' task '_' adaptType '_' currEpoch '_' m d y '.mat'];
         outName = [task '_' adaptType '_' currEpoch '_' useDate '.mat'];
         
-        bdfPath = fullfile(dataDir,bdfArray,'BDFStructs',useDate);
+        bdfPath = fullfile(dataDir,'BDFStructs',useDate);
         outPath = fullfile(outDir,procDirName,useDate);
         bdfFile = fullfile(bdfPath,bdfName);
         outFile = fullfile(outPath,outName);
@@ -170,6 +161,12 @@ if load_success
         pos(:,1) = pos(:,1)+(x_offset-2);
         pos(:,2) = pos(:,2)+(y_offset+2);
         
+        if shuntCheck
+            % make a faux BDF to do crosstalk analysis
+            fauxBDF = struct('pos',out_struct.pos);
+        end
+        
+        
         %% Turn that into a movement table
         if strcmpi(tempTask,'RT')
             % rotate position to get target directions
@@ -201,6 +198,7 @@ if load_success
         
         clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves spd;
         
+        
         %% Get neural data
         load_success = 1;
         disp('Getting neural data...')
@@ -210,16 +208,16 @@ if load_success
             switch fileType
                 case 'nev' % loading the data from nev files
                     cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '-s.nev'];
-                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                    cerPath = fullfile(dataDir,'CerebusData',useDate);
                     cerFile = fullfile(cerPath,cerName);
                     
                     if ~exist(cerFile,'file') % probably not sorted, so do this
                         cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.nev'];
-                        cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                        cerPath = fullfile(dataDir,'CerebusData',useDate);
                         cerFile = fullfile(cerPath,cerName);
                         if ~exist(cerFile,'file') % probably not sorted, so do this
                             cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '.nev'];
-                            cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                            cerPath = fullfile(dataDir,'CerebusData',useDate);
                             cerFile = fullfile(cerPath,cerName);
                             if ~exist(cerFile,'file') % probably not sorted, so do this
                                 load_success = 0;
@@ -228,6 +226,10 @@ if load_success
                     end
                     
                     if load_success
+                        if shuntCheck
+                            warning('Shunt check not implemented for .nev file loading. Use NEVNSX.');
+                        end
+                        
                         % load cerebus data to make waveform plots
                         % Load the Cerebus library
                         [nsresult] = ns_SetLibrary(which('nsNEVLibrary.dll'));
@@ -328,32 +330,29 @@ if load_success
                     
                     %                 cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.mat'];
                     cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '-s.mat'];
-                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                    cerPath = fullfile(dataDir,'CerebusData',useDate);
                     cerFile = fullfile(cerPath,cerName);
                     
                     if ~exist(cerFile,'file') % probably not sorted, so do this
                         
                         cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.mat'];
-                        cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                        cerPath = fullfile(dataDir,'CerebusData',useDate);
                         cerFile = fullfile(cerPath,cerName);
                         if ~exist(cerFile,'file') % probably not sorted, so do this
                             load_success = 0;
                         end
                     end
                     
-                    
                     load(cerFile,'NEV');
-                    
                     electrodes = NEV.Data.Spikes.Electrode;
-                    
                     uelecs = unique(electrodes);
                     
                     % for now, hard code to be 96 channels
                     uelecs = uelecs(uelecs <= 96);
                     
-                    
                     unitCount = 0; clear u;
                     sg = [];
+                    channel_units = repmat(struct('id',[0 0],'ts',[]),1,length(uelecs));
                     for channel = 1:length(uelecs)
                         
                         inds = electrodes == uelecs(channel);
@@ -362,7 +361,9 @@ if load_success
                         timestamps = double(NEV.Data.Spikes.TimeStamp(inds))/nevnsxSampRate;
                         waveforms = NEV.Data.Spikes.Waveform(:,inds);
                         
-                        chanName = ['elec' num2str(uelecs(channel))];
+                        % put together a faux-BDF that is by channel
+                        channel_units(channel).id = [uelecs(channel),0];
+                        channel_units(channel).ts = timestamps;
                         
                         % remove any indices that don't exist, or are unsorted/invalidated
                         if useUnsorted
@@ -411,6 +412,32 @@ if load_success
                     
                     [~,idx] = sort(sg(:,1));
                     sg = sg(idx,:);
+                    
+                    if shuntCheck
+                        disp('Checking for shunted electrodes...');
+                        fauxBDF.units = channel_units;
+                        [~,~,shunted_groups] = crosstalk_analysis(fauxBDF,'spike','spike_thresh',50);
+                        
+                        rm_tally = 0;
+                        for shunt = 1:length(shunted_groups)
+                            % pick the one with the most spikes
+                            [~,keep_idx] = max(cellfun(@(x) length(x),{fauxBDF.units(shunted_groups{shunt}).ts}));
+                            
+                            % 
+                            rm_idx = shunted_groups{shunt};
+                            rm_idx(keep_idx) = [];
+                            
+                            rm_tally = rm_tally + length(rm_idx);
+                            
+                            % take out each of the offending electrodes
+                            for elec = rm_idx
+                                u(cellfun(@(x) x(1) == elec,{u.id})) = [];
+                                sg = sg(sg(:,1)~=elec,:);
+                            end
+                        end
+                        
+                        disp(['Removed ' num2str(rm_tally) ' electrodes with suspected shunts.']);
+                    end
                     
                     % store unit data in the struct
                     data.(currArray).units = u;

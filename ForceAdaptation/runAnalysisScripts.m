@@ -1,6 +1,7 @@
 % Buildi.ng a new wrapper function to do analysis scripts
 % TO DO:
 %   - Scatter doesn't check that Movement/Target/etc have the same tuned cells
+
 clear
 clc
 close all;
@@ -22,7 +23,7 @@ whichScript = 3;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Now a bunch of parameters and necessary info
-root_dir = 'F:\';
+root_dir = 'F:\results\m1_cf_JNS_results\';
 
 useArray = 'M1'; % Monkey sessions are filtered by array
 useMonkeys = {'Chewie','Mihili'};
@@ -44,7 +45,7 @@ whichBlock = 1; % if multiple classification block sets
 %   4) Neuron Tracking
 %   5) PD CI
 %   6) Cosine R2
-whichTuned = [1,4,5,6]; %which columns in istuned to use
+whichTuned = [1,2,3,4,5,6]; %which columns in istuned to use
 
 % separate by waveform width (not all scripts support this)
 %   0: don't do
@@ -61,13 +62,13 @@ flipClockwisePerts = true;
 % titles/metrics etc for the over-session script
 which_parameter = 'PD';
 sComp.monkeys = useMonkeys;
-sComp.titles  = {'All','Chewie','Mihili'};%which_parameter, which_parameter};
-sComp.metrics = {which_parameter, which_parameter, which_parameter};
+sComp.titles  = {'PD','PD'};%which_parameter, which_parameter};
+sComp.metrics = {which_parameter, which_parameter};
 sComp.epochs  = {'BL_AD', 'BL_WO'}; % only used for over-session
-sComp.params  = {paramSetName, paramSetName, paramSetName};
-sComp.methods = {tuneMethod, tuneMethod, tuneMethod};
-sComp.windows = {tuneWindow, tuneWindow, tuneWindow};
-sComp.arrays  = {useArray, useArray, useArray};
+sComp.params  = {paramSetName, paramSetName};
+sComp.methods = {tuneMethod, tuneMethod};
+sComp.windows = {tuneWindow, tuneWindow};
+sComp.arrays  = {useArray, useArray};
 sComp.reassignOthers = false; % reassign "Other" type cell classes as Dynamic/Memory (only for scatter)
 sComp.doAbs = false; %take absolute value of differences for each cell
 sComp.doPercent = true; %whether to do MD/BO/FR as a percentage
@@ -75,13 +76,13 @@ sComp.doPercent = true; %whether to do MD/BO/FR as a percentage
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % For sliding-window tuning in CO task and also slow/fast movements
 slidingParams.metric = 'PD';
-slidingParams.doAvg = false; % do average across sessions (mainly for group scatter plot)
+slidingParams.doAvg = true; % do average across sessions (mainly for group scatter plot)
 slidingParams.useVel = false; % use velocity instead of measured force
 slidingParams.useMasterTuned = true; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
-slidingParams.doAbs = false; % take absolute of difference between epochs
+slidingParams.doAbs = true; % take absolute of difference between epochs
 slidingParams.doMD = false;
 slidingParams.doMDNorm = true;
-slidingParams.plotClasses = [2,5];
+slidingParams.plotClasses = [1,2,3,4,5];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % For FR ANOVA analysis
@@ -94,6 +95,7 @@ franova.numBins = 3;
 
 % Now list the files to consider
 dataSummary;
+sessionList = sessionList(datenum(sessionList(:,2)) < datenum('2016-01-01'),:);
 
 if whichScript ~= 7 % for behavioral adaptation, doesn't matter what array
     switch lower(useArray)

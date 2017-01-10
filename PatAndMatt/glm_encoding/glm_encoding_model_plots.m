@@ -1,54 +1,99 @@
 %%
 clear
-clc;
-close all;
+% clc;
+% close all;
+
+if 0
+    a = reshape(e_pr2{2},numel(e_pr2{2}),1);
+    g = reshape( repmat(1:size(e_pr2{2},2),size(e_pr2{2},1),1), numel(e_pr2{2}), 1 );
+    anovan(a,g,'Display','off')
+end
 
 dataSummary;
 
-outputSubdir = 'all';
-sessions = { ...
-    'Chewie','2016-09-15'; ...
+outputSubdir = 'trainad_null8';
+
+% sessions = { ...
+%     'Chewie','2016-09-09'; ... % VR
+%     'Chewie','2016-09-12'; ...
+%     'Chewie','2016-09-14'; ...
+%     'Mihili','2014-03-03'; ...
+%     'Mihili','2014-03-04'; ...
+%     'Mihili','2014-03-06'; ...
+%     'Mihili','2015-06-23'; ...
+%     'Mihili','2015-06-25'; ...
+%     'Mihili','2015-06-26'; ...
+%     'Chewie','2016-09-15'; ... % CF
 %     'Chewie','2016-09-19'; ...
 %     'Chewie','2016-10-05'; ...
 %     'Chewie','2016-10-07'; ...
+%     'Mihili','2014-02-03'; ...
 %     'Mihili','2014-02-17'; ...
 %     'Mihili','2014-02-18'; ...
 %     'Mihili','2014-03-07'; ...
 %     'Mihili','2015-06-15'; ...
 %     'Mihili','2015-06-16'; ...
 %     'Mihili','2015-06-17'; ...
-    };
+%     'MrT','2013-08-19'; ... % CF
+%     'MrT','2013-08-21'; ...
+%     'MrT','2013-08-23'; ...
+%     'MrT','2013-09-03'; ... % VR
+%     'MrT','2013-09-05'; ...
+%     'MrT','2013-09-09'; ...
+%     };
+
+sessions = { ...
+    'Chewie','2016-09-15'; ... % CF
+    'Chewie','2016-09-19'; ...
+    'Chewie','2016-10-05'; ...
+    'Chewie','2016-10-07'; ...
+    'Mihili','2014-02-03'; ...
+    'Mihili','2014-02-17'; ...
+    'Mihili','2014-02-18'; ...
+    'Mihili','2014-03-07'; ...
+%     'Chewie','2016-09-09'; ... % VR
+%     'Chewie','2016-09-12'; ...
+%     'Chewie','2016-09-14'; ...
+%     'Mihili','2014-03-03'; ...
+%     'Mihili','2014-03-04'; ...
+%     'Mihili','2014-03-06'; ...
+};
+
+
+perts = {'FF'};
+tasks = {'CO'};
+dates = sessions(:,2);
+monkeys = unique(sessions(:,1));
 
 % array_pairs = {'M1-M1','PMd-PMd','PMd-M1'};
-array_pairs = {'PMd-PMd'};
+array_pairs = {'PMd-M1'};
 
-which_metric = 'rpr2';
-pr2_cutoff = 0;
-pr2_op = 'min';
-pr2_wo_check = true; % only keeps cells that predict in WO
+which_metric = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
+pr2_cutoff = 0.01;
+pr2_op = 'mean'; % which operation for filtering ('min','max','mean','median')
+pr2_wo_check = false; % only keeps cells that predict in WO
 
-do_norm = false;
+plot_op = 'median';
+group_size = 10;
+
+do_norm = true;
 do_diff = true;
-do_conf_int = true; % bootstrapped 95% confidence bounds for error bars
-num_bootstraps = 1000;
+error_bars = 'boot'; % 'boot','ste'
+num_bootstraps = 1500;
+
+do_regression_line = false;
+add_plot = true;
+do_subplot = false;
 
 epochs = {'BL','AD','WO'};
 
 if do_norm
-    min_y = -5; max_y = 0.25;
-    xmin = -5;
-    xmax = 5;
-    dx = 0.2;
+    min_y = -2; max_y = 0.5;
 else
-    min_y = -0.75; max_y = 0.1;
-    xmin = -0.3;
-    xmax = 0.15;
-    dx = 0.01;
+    min_y = -0.1; max_y = 0.1;
 end
 
-
 %%
-nbins = xmin-dx:dx:xmax+dx;
 
 plot_colors = [0    0.4470    0.7410; ...
     0.8500    0.3250    0.0980; ...
@@ -58,13 +103,7 @@ plot_colors = [0    0.4470    0.7410; ...
     0.3010    0.7450    0.9330; ...
     0.6350    0.0780    0.1840];
 
-session_idx = ismember(filedb.Monkey,sessions(:,1)) & ismember(filedb.Date,sessions(:,2));
-perts = unique(filedb.Perturbation(session_idx));
-
-figure;
-if length(perts) > 1
-    subplot1(1,length(perts));
-end
+session_idx = ismember(filedb.Monkey,monkeys) & ismember(filedb.Perturbation,perts) & ismember(filedb.Task,tasks) & ismember(filedb.Date,dates);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % max_y = 0;
@@ -73,10 +112,9 @@ min_vaf = 0;
 max_vaf = 0;
 all_shit = [];
 for idx_pert = 1:length(perts)
-    if length(perts) > 1
-        subplot1(idx_pert);
+    if ~add_plot
+        figure;
     end
-    
     idx = find(strcmpi(perts{idx_pert},filedb.Perturbation) & session_idx);
     filenames = cell(1,length(idx));
     for s = 1:length(idx)
@@ -84,173 +122,123 @@ for idx_pert = 1:length(perts)
     end
     
     for model = 1:length(array_pairs)
-        
-        cv = [];
-        % loop along files and group together
-        [total_cells,total_significant] = deal(0);
-        
-        for file = 1:length(filenames) % loop along sessions
-            load(fullfile(rootDir,TDDir,outputSubdir,[perts{idx_pert} '-' array_pairs{model} '_' filenames{file} '.mat']),'results','params');
-            
-            if ischar(params.test_epochs(1,:))
-                a = cell(size(params.test_epochs,1),1);
-                for i = 1:size(params.test_epochs,1), a{i} = params.test_epochs(i,:); end, params.test_epochs = a';
-                params.test_epochs = a;
-            end
-            
-            switch lower(pr2_op)
-                case 'mean'
-                    temp_pr2 = mean(mean(results.([which_metric '_cv']),3),2);
-                case 'median'
-                    temp_pr2 = median(mean(results.([which_metric '_cv']),3),2);
-                case 'max'
-                    temp_pr2 = max(mean(results.([which_metric '_cv']),3),[],2);
-                case 'min'
-                    temp_pr2 = min(mean(results.([which_metric '_cv']),3),[],2);
-            end
-            good_idx = temp_pr2(:,1) > pr2_cutoff;
-            
-            temp_metric = results.(which_metric);
-            
-            if pr2_wo_check % only take cells that can predict in the washout
-                good_idx = good_idx & mean(mean(temp_metric(:,wo_inds(1:end),:),3),2) > pr2_cutoff;
-            end
-            
-            temp_metric = temp_metric(good_idx,:,:);
-            
-            % get some stats
-            total_significant = total_significant+sum(good_idx);
-            total_cells = total_cells+length(good_idx);
-            
-            temp_metric_cv = results.([which_metric '_cv']);
-            
-            % parse out relevant params
-            bl_inds = find(strcmpi(params.test_epochs,'BL'));
-            ad_inds = find(strcmpi(params.test_epochs,'AD'));
-            wo_inds = find(strcmpi(params.test_epochs,'WO'));
-            
-            if file > 1
-                bl_inds = bl_inds(1:min([length(bl_inds), size(bl,2)]));
-                ad_inds = ad_inds(1:min([length(ad_inds), size(ad,2)]));
-                wo_inds = wo_inds(1:min([length(wo_inds), size(wo,2)]));
-                bl = [bl(:,1:length(bl_inds)); mean(temp_metric(:,bl_inds,:),3)];
-                ad = [ad(:,1:length(ad_inds)); mean(temp_metric(:,ad_inds,:),3)];
-                wo = [wo(:,1:length(wo_inds)); mean(temp_metric(:,wo_inds,:),3)];
-            else
-                bl = mean(temp_metric(:,bl_inds,:),3);
-                ad = mean(temp_metric(:,ad_inds,:),3);
-                wo = mean(temp_metric(:,wo_inds,:),3);
-            end
-            
-            cv = [cv; mean(temp_metric_cv(good_idx,:,:),3)];
+        if do_subplot
+            subplot(1,length(array_pairs),model); hold all;
+        else
+            hold all;
         end
+        
+        % build list of filenames
+        filepaths = cell(1,length(filenames));
+        for file = 1:length(filenames)
+            filepaths{file} = fullfile(rootDir,TDDir,outputSubdir,[perts{idx_pert} '-' array_pairs{model} '_' filenames{file} '.mat']);
+        end
+        
+        out_struct = get_plot_metrics(filepaths,struct('which_metric',which_metric,'epochs',{epochs},'pr2_cutoff',pr2_cutoff,'pr2_op',pr2_op,'pr2_wo_check',pr2_wo_check));
+        cv = out_struct.cv;
+        e_pr2 = out_struct.e_pr2;
+        e_inds = out_struct.e_inds;
+        total_significant = out_struct.total_significant;
+        total_cells = out_struct.total_cells;
         
         disp([array_pairs{model} ' - % cells with significant rel-pseudo-r2: ' num2str(total_significant) '/' num2str(total_cells)]);
-        
         disp([array_pairs{model} ' - Mean baseline metric: ' num2str(mean(mean(cv,2))) ' +/- ' num2str(std(mean(cv,2)))]);
         
-        % OVER TIME
-        plot_inds = [bl_inds;ad_inds;wo_inds];
-        
-        if do_diff
-            bl = bl - repmat(mean(cv,2),1,size(bl,2));
-            ad = ad - repmat(mean(cv,2),1,size(ad,2));
-            wo = wo - repmat(mean(cv,2),1,size(wo,2));
-        end
-        
-        if do_norm
-            bl = bl ./ repmat(abs(mean(cv,2)),1,size(bl,2));
-            ad = ad ./ repmat(abs(mean(cv,2)),1,size(ad,2));
-            wo = wo ./ repmat(abs(mean(cv,2)),1,size(wo,2));
-        end
-        
-        % BASELINE
-        m = zeros(1,size(bl,2));
-        s = zeros(2,size(bl,2));
-        for k = 1:size(bl,2)
-            m(k) = nanmedian(bl(:,k),1);
-            if do_conf_int
-                temp = bl(:,k);
-                bs = zeros(1,num_bootstraps);
-                for z = 1:num_bootstraps
-                    bs(z) = nanmedian(temp(randi(length(temp),length(temp),1)),1);
+        [all_x, all_y, all_y_std] = deal([]);
+        for e = 1:length(epochs)
+            v = e_pr2{e};
+            if ~isempty(v)
+                if do_diff
+                    v = v - repmat(mean(cv,2),1,size(v,2));
+                    if do_norm
+                        v = v ./ repmat(abs(mean(cv,2)),1,size(v,2));
+                    end
                 end
-                s(:,k) = prctile(bs,[2.5,97.5])';
-            else
-                s(:,k) = [m(k)-nanstd(bl(:,k),1)./sqrt(size(bl(:,k),1)); ...
-                    m(k)+nanstd(bl(:,k),1)./sqrt(size(bl(:,k),1))];
+                
+                % group together some number of trials
+                if group_size > 1
+                    group_idx = 1:group_size:size(v,2);
+                    temp_v = zeros(group_size*size(v,1),length(group_idx)-1);
+                    for i = 1:length(group_idx)-1
+                        temp_v(:,i) = reshape(v(:,group_idx(i):group_idx(i+1)-1),group_size*size(v,1),1);
+                    end
+                    v = temp_v;
+                end
+                
+                m = zeros(1,size(v,2));
+                s = zeros(2,size(v,2));
+                for k = 1:size(v,2)
+                    switch lower(plot_op)
+                        case 'median'
+                            m(k) = median(v(:,k),1);
+                            switch lower(error_bars)
+                                case 'boot' % bootstrapped 95% conf int
+                                    temp = v(:,k);
+                                    bs = randi(length(temp),length(temp),num_bootstraps);
+                                    s(:,k) = prctile( median(temp(bs),1) ,[2.5,97.5])';
+                                case 'ste' % standard error of mean
+                                    s(:,k) = [m(k)-std(v(:,k),1)./sqrt(size(v(:,k),1)); ...
+                                        m(k)+std(v(:,k),1)./sqrt(size(v(:,k),1))];
+                            end
+                        case 'mean'
+                            m(k) = mean(v(:,k),1);
+                            switch lower(error_bars)
+                                case 'boot' % bootstrapped 95% conf int
+                                    temp = v(:,k);
+                                    bs = randi(length(temp),length(temp),num_bootstraps);
+                                    s(:,k) = prctile( mean(temp(bs),1) ,[2.5,97.5])';
+                                case 'ste' % standard error of mean
+                                    s(:,k) = [m(k)-std(v(:,k),1)./sqrt(size(v(:,k),1)); ...
+                                        m(k)+std(v(:,k),1)./sqrt(size(v(:,k),1))];
+                            end
+                    end
+                end
+                
+                if do_regression_line
+                    %[b,~,~,~,stats] = regress(reshape(v,numel(v),1),[ones(numel(v),1), reshape(repmat(1:size(v,2),size(v,1),1),numel(v),1)]);
+                    [b,~,~,~,stats] = regress(m',[ones(numel(m),1), (1:length(m))']);
+                    plot(1+size(all_x,2)+(1:length(m)),b(1) + b(2)*(1:length(m)),'k-','LineWidth',2);
+                    text(size(all_x,2),0,[num2str(stats(1),'%10.2e') ', ' num2str(stats(3),'%10.2e')]);
+                end
+                
+                all_x = [all_x, 1+size(all_x,2)+(1:length(m))];
+                all_y = [all_y, m];
+                all_y_std = [all_y_std, s];
             end
         end
-        all_x = 1:length(m);
-        all_y = m;
-        all_y_std = s;
-        
-        % ADAPTATION
-        m = zeros(1,size(ad,2));
-        s = zeros(2,size(ad,2));
-        for k = 1:size(ad,2)
-            m(k) = nanmedian(ad(:,k),1);
-            if do_conf_int
-                temp = ad(:,k);
-                bs = zeros(1,num_bootstraps);
-                for z = 1:num_bootstraps
-                    bs(z) = nanmedian(temp(randi(length(temp),length(temp),1)),1);
-                end
-                s(:,k) = prctile(bs,[2.5,97.5])';
-            else
-                s(:,k) = [m(k)-nanstd(ad(:,k),1)./sqrt(size(ad(:,k),1)); ...
-                    m(k)+nanstd(ad(:,k),1)./sqrt(size(ad(:,k),1))];
-            end
-        end
-        all_x = [all_x, 1+size(bl,2)+(1:length(m))];
-        all_y = [all_y, m];
-        all_y_std = [all_y_std, s];
-        
-        % WASHOUT
-        m = zeros(1,size(wo,2));
-        s = zeros(2,size(wo,2));
-        for k = 1:size(wo,2)
-            m(k) = nanmedian(wo(:,k),1);
-            if do_conf_int
-                temp = wo(:,k);
-                bs = zeros(1,num_bootstraps);
-                for z = 1:num_bootstraps
-                    bs(z) = nanmedian(temp(randi(length(temp),length(temp),1)),1);
-                end
-                s(:,k) = prctile(bs,[2.5,97.5])';
-            else
-                s(:,k) = [m(k)-nanstd(wo(:,k),1)./sqrt(size(wo(:,k),1)); ...
-                    m(k)+nanstd(wo(:,k),1)./sqrt(size(wo(:,k),1))];
-            end
-        end
-        all_x = [all_x, 1+size(bl,2)+size(ad,2)+(1:length(m))];
-        all_y = [all_y, m];
-        all_y_std = [all_y_std, s];
         
         all_x = all_x - 1;
         
-        %         min_y = min([min_y, all_y_std(1,:)]);
-        %         max_y = max([max_y, all_y_std(2,:)]);
+        % min_y = min([min_y, all_y_std(1,:)]);
+        % max_y = max([max_y, all_y_std(2,:)]);
         
         hold all;
         patch([all_x, fliplr(all_x)],[all_y_std(1,:), fliplr(all_y_std(2,:))],plot_colors(model,:),'FaceAlpha',0.3,'EdgeAlpha',0.5,'EdgeColor',plot_colors(model,:));
         h(model) = plot(all_x,all_y,'+','LineWidth',3,'Color',plot_colors(model,:));
-        %         h(model) = plot(all_x,all_y,'-','LineWidth',3,'Color',plot_colors(model,:));
         
     end
     
     % some end-of-script tweaking of stuff
     for model = 1:length(array_pairs)
-        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 length(bl_inds)+length(ad_inds)+length(wo_inds)],'YLim',[min_y, max_y], ...
-            'XTick',[floor(0+length(ad_inds)/2), ceil(1+length(ad_inds)+length(wo_inds)/2)],'XTickLabel',{'Force','Wash'},'FontSize',14);
-        plot([length(bl_inds), length(bl_inds)]+0.5,[min_y, max_y],'k--','LineWidth',2);
-        plot(0.5+length(bl_inds)+[length(ad_inds), length(ad_inds)],[min_y, max_y],'k--','LineWidth',2);
+        if do_subplot
+            h = subplot(1,3,model);
+            title(h,array_pairs{model});
+        else
+            h = gca;
+        end
+        axis('tight');
+        set(h,'Box','off','TickDir','out','FontSize',14,'YLim',[min_y, max_y],'FontSize',14);
+        %             'XTick',[floor(0+length(ad_inds)/2), ceil(1+length(ad_inds)+length(wo_inds)/2)],'XTickLabel',{'Force','Wash'},'FontSize',14);
+        for e = 1:length(epochs)-1
+            plot([sum(cellfun(@(x) floor(length(x)/group_size),e_inds(1:e))), sum(cellfun(@(x) floor(length(x)/group_size),e_inds(1:e)))]+0.5,[min_y,max_y],'k--','LineWidth',2);
+        end
     end
+    title(outputSubdir,'FontSize',14);
     if idx_pert == 1
         if do_norm
-            ylabel('Norm Change in Pseudo-R^2','FontSize',14);
+            ylabel(['norm change in ' which_metric],'FontSize',14);
         else
-            ylabel('Change in Pseudo-R^2','FontSize',14);
+            ylabel(['change in ' which_metric],'FontSize',14);
         end
     end
     if idx_pert == length(perts)

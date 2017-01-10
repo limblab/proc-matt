@@ -1,4 +1,4 @@
-function varargout = get_covariates(trial_data, idx_trial, varargin)
+function varargout = get_covariates(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % pieces together the covariates for the GLM model
 % varargin:
@@ -9,6 +9,7 @@ function varargout = get_covariates(trial_data, idx_trial, varargin)
 % Note: params must always be an input.
 %       also, start_idx must always come before end_idx
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+idx_trial = 1:length(trial_data);
 
 if length(varargin) == 1
     params = varargin{1};
@@ -35,6 +36,14 @@ cov_array = params.cov_array;
 pred_array = params.pred_array;
 kin_signals = params.kin_signals;
 
+if ischar(params.do_pca)
+    spike_field_name = '_pca';
+    spike_shift_field_name = '_pca_shift';
+else
+    spike_field_name = '_spikes';
+    spike_shift_field_name = '_spikes_shift';
+end
+
 % get ultimate size of arrays
 if isempty(start_idx)
     n_data = sum((1+cellfun(@(x) size(x,1), {trial_data(idx_trial).pos})));
@@ -46,7 +55,8 @@ n_kin = 0;
 for i = 1:length(kin_signals)
     n_kin = n_kin + size(trial_data(1).(kin_signals{i}),2);
 end
-n_spikes = size(trial_data(1).([cov_array '_spikes']),2);
+
+n_spikes = size(trial_data(1).([cov_array spike_field_name]),2);
 cov_kin = zeros(n_data,n_kin);
 cov_spikes = zeros(n_data,n_spikes);
 
@@ -56,9 +66,14 @@ if shift_data
     for i = 1:length(kin_signals)
         n_kin_shift = n_kin_shift + size(trial_data(1).([kin_signals{i} '_shift']),2);
     end
-    n_spikes_shift = size(trial_data(1).([cov_array '_spikes_shift']),2);
     cov_kin_shift = zeros(n_data,n_kin_shift);
-    cov_spikes_shift = zeros(n_data,n_spikes_shift);
+    
+    if isfield(trial_data(1),spike_shift_field_name)
+        n_spikes_shift = size(trial_data(1).([cov_array spike_shift_field_name]),2);
+        cov_spikes_shift = zeros(n_data,n_spikes_shift);
+    else
+        cov_spikes_shift = [];
+    end
 else
     cov_kin_shift = [];
     cov_spikes_shift = [];
@@ -74,12 +89,12 @@ for trial = idx_trial
     store_idx = last_one+1:last_one+length(idx);
     
     % get spiking covariate
-    temp = trial_data(trial).([cov_array '_spikes']);
+    temp = trial_data(trial).([cov_array spike_field_name]);
     cov_spikes(store_idx,:) = temp(idx,:);
     
     % check if we want any history
-    if shift_data
-        temp = trial_data(trial).([cov_array '_spikes_shift']);
+    if ~isempty(cov_spikes_shift)
+        temp = trial_data(trial).([cov_array spike_shift_field_name]);
         cov_spikes_shift(store_idx,:) = temp(idx,:);
     end
     
@@ -135,7 +150,7 @@ if ~strcmpi(cov_array,pred_array)
             temp = trial_data(trial).([pred_array '_spikes_shift']);
             pred_spikes_shift(store_idx,:) = temp(idx,:);
         end
-
+        
         last_one = last_one + length(idx);
     end, clear i temp bin_inds fr fr_shift;
 else

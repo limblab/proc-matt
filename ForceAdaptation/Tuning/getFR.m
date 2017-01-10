@@ -1,4 +1,4 @@
-function [outFR, outTheta, blockMT, outForce_rms, outVel, outForce] = getFR(data,params,useArray,tuningPeriod)
+function [outFR, outTheta, blockMT, outForce_rms, outVel, outForce,outThetaHand] = getFR(data,params,useArray,tuningPeriod)
 % finds firing rates for each movement based on the windows identified in
 % the data struct. returns firing rate matrix (each unit against trial
 % number) and direction of each movement
@@ -117,8 +117,8 @@ for iBlock = 1:numBlocks
                 for i = 13:length(data.cont.t)
                     v = data.cont.vel(i-11,:);
                     t = atan2(data.cont.vel(i-11,2)-data.cont.vel(i-12,2),data.cont.vel(i-11,1)-data.cont.vel(i-12,1));
-                    f_p(i,1) = forceMag.*sqrt(v(1).^2 + v(2).^2)*cos(t+(forceDir*pi/180));
-                    f_p(i,2) = forceMag.*sqrt(v(1).^2 + v(2).^2)*sin(t+(forceDir*pi/180));
+                    f_p(i,1) = forceMag.*sqrt(v(1).^2 + v(2).^2)*cos(pi+(t - forceDir*pi/180));
+                    f_p(i,2) = forceMag.*sqrt(v(1).^2 + v(2).^2)*sin(pi+(t - forceDir*pi/180));
                     f_h(i,1) = data.cont.force(i,1)-f_p(i,1);
                     f_h(i,2) = data.cont.force(i,2)-f_p(i,2);
                 end
@@ -181,6 +181,7 @@ for iBlock = 1:numBlocks
     
     outFR{iBlock} = fr;
     outTheta{iBlock} = theta;
+    outThetaHand{iBlock} = theta_hand;
     outForce{iBlock} = force;
     outForce_rms{iBlock} = force_rms;
     outVel{iBlock} = vel;

@@ -20,6 +20,9 @@ for idx_array = 1:length(arrays)
         end
     end
     
+    % get rid of things that aren't utah recordings
+    master_sg( master_sg(:,1) > 96, :) = [];
+    
     % now trim out missing units
     for i = 1:length(trial_data)
         [~, idx] = checkUnitGuides(trial_data(i).([array '_unit_guide']),master_sg);

@@ -12,15 +12,13 @@ doMDNorm = slidingParams.doMDNorm; % whether to normalize by baseline modulation
 metric = slidingParams.metric;
 plotClasses = slidingParams.plotClasses;
 
-% how many blocks to expect
-numBlocks = 15;
 useMasterTunedName = 'movement';
 
 colors = {'k','b','r'};
 doCirc = true;
 
-metricInfo.PD.ymin = 20;
-metricInfo.PD.ymax = 80;
+metricInfo.PD.ymin = 0;
+metricInfo.PD.ymax = 100;
 metricInfo.PD.binSize = 10;
 metricInfo.PD.label = 'PD Change (Deg) ';
 
@@ -121,7 +119,7 @@ for iMonkey = 1:length(monkeys)
         % get direction of perturbation to flip the clockwise ones to align
         if flipClockwisePerts && ~doAbs
             % gotta hack it
-            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'',doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
             switch lower(t(1).params.exp.angle_dir)
@@ -135,6 +133,9 @@ for iMonkey = 1:length(monkeys)
         end
         
         classifierBlocks = t(1).params.classes.classifierBlocks;
+        
+%         disp('ONLY TAKING FIRST SIX WINDOWS');
+%         classifierBlocks = classifierBlocks(1:6,:);
         
         if doWidthSeparation
             % load baseline data to get waveforms
@@ -154,11 +155,13 @@ for iMonkey = 1:length(monkeys)
             end
         end
         
+        num_blocks = size(classifierBlocks,1);
+        
         for iBlock = 1:size(classifierBlocks,2)
             neurons = struct();
-            force = zeros(1,size(classifierBlocks,1));
-            vel = zeros(1,size(classifierBlocks,1));
-            for iWin = 1:size(classifierBlocks,1)
+            force = zeros(1,num_blocks);
+            vel = zeros(1,num_blocks);
+            for iWin = 1:num_blocks
                 
                 % find average force
                 if useVel
@@ -204,14 +207,14 @@ for iMonkey = 1:length(monkeys)
                     if ismember(tunedClasses(i),plotClasses)
                         if ~doMD
                             if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,num_blocks);
                                 neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                             else
                                 neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                             end
                         else
                             if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,num_blocks);
                                 neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
                             else
                                 neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
@@ -230,12 +233,16 @@ for iMonkey = 1:length(monkeys)
     
     % Reorganize data to get all cells together
     dPDs = cell(size(doFiles,1),2);
-    bl_pds = [];
-    ad_pds = [];
-    wo_pds = [];
+%     bl_pds = [];
+%     ad_pds = [];
+%     wo_pds = [];
     % only adaptation period makes sense for this, since force is mostly
     % noise otherwise
     for iFile = 1:size(doFiles,1)
+        bl_pds = [];
+        ad_pds = [];
+        wo_pds = [];
+        
         bl_neurons = cellPDs{iFile,1};
         ad_neurons = cellPDs{iFile,2};
         wo_neurons = cellPDs{iFile,3};
@@ -310,7 +317,7 @@ for iMonkey = 1:length(monkeys)
             minnum = 2;
         end
         if size(dpd,1) > minnum
-            for i = 1:size(dpd,2)
+            for i = 1:6%size(dpd,2)
                 temp = force(i);
                 tempv = vel(i);
                 if ~doMD
@@ -322,8 +329,6 @@ for iMonkey = 1:length(monkeys)
                 else
                     plot(temp,mean(dpd(:,i)),'o','Color',colors{2},'LineWidth',2);
                 end
-                
-                
                 
                 if doAvg
                     allForce = [allForce; temp];

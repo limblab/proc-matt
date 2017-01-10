@@ -117,7 +117,7 @@ for iRes = 1:length(sComp.titles)
         % get direction of perturbation to flip the clockwise ones to align
         if flipClockwisePerts
             % gotta hack it
-            dataPath = fullfile(root_dir,useFiles{iFile,1},'Processed',useFiles{iFile,2});
+            dataPath = fullfile(root_dir,useFiles{iFile,1},useFiles{iFile,2});
             expParamFile = fullfile(dataPath,[useFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
             switch lower(t(1).params.exp.angle_dir)
@@ -262,6 +262,13 @@ for iRes = 1:length(sComp.titles)
     if ~strcmpi(sComp.metrics{iRes},'VE')
         eval(['plotData=mean(d' sComp.metrics{iRes} 's,1);']);
         eval(['plotErr=mean(err' sComp.metrics{iRes} 's,1);']);
+        
+%         err_bs = zeros(1000,size(dPDs,2));
+%         for z = 1:1000
+%             temp = randi(size(dPDs,1),size(dPDs,1),1);
+%             err_bs(z,:) = mean(dPDs(temp,:),1);
+%         end
+%         plotErr = diff(prctile(err_bs,[1,99],1))/2;
     else
         for i = 1:size(cellVEs,2)
             plotData(i) = mean(dVEs{i},1);

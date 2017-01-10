@@ -24,7 +24,7 @@ function varargout = loadResults(root_dir,sessionInfo,type,subdata,varargin)
 % same number of outputs when you call loadResults.
 %   e.g. [tuning, classes] = loadData('etc',{etc},'tuning',{'tuning','classes'},etc...);
 
-pdName = 'Processed'; % name of processed data subfolder
+pdName = ''; % name of processed data subfolder
 
 if nargin < 4
     subdata  = [];

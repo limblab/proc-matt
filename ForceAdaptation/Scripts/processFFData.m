@@ -14,9 +14,9 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % would be great to have proper database
 %   - could load monkey info
-dataRoot = 'F:\';
-procDirName = 'Processed';
-monkeys = {'Mihili','Chewie'};
+dataRoot = 'F:\results\m1_cf_JNS_results\';
+procDirName = '';
+monkeys = {'Chewie','Mihili'};
 paramSetNames = {'movement'};
 
 % exclude these analysis steps
@@ -41,6 +41,8 @@ params = getParamDefaults;
 params = setParamValues(params,'dataRoot',dataRoot);
 
 dataSummary;
+
+sessionList = sessionList( datenum(sessionList(:,2)) < datenum('2016-01-01') & strcmpi(sessionList(:,3),'FF') & strcmpi(sessionList(:,4),'CO'), 1:4);
 
 for iMonkey = 1:length(monkeys)
     monkey = monkeys{iMonkey};

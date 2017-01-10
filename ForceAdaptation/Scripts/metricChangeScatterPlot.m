@@ -7,6 +7,8 @@
 %   This is all mediated with the toCompare struct. This code assumes that
 %   only the first two entries in that struct array are relevant.
 
+do_dir_anova = true;
+
 classColors = {'k','b','r','m','g'};
 classNames = {'Kinematic','Dynamic','Memory I','Memory II','Other'};
 
@@ -102,7 +104,7 @@ for iAxis = 1:length(axisNames)
     for iFile = 1:size(doFiles,1)
         % load tuning and class info
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
-        
+
         classifierBlocks = c(whichBlock).params.classes.classifierBlocks;
         
         if doWidthSeparation
@@ -155,17 +157,33 @@ for iAxis = 1:length(axisNames)
     cellBOs = cell(size(doFiles,1),1);
     cellFRs = cell(size(doFiles,1),1);
     cellR2 = cell(size(doFiles,1),1);
+    cellSG = cell(size(doFiles,1),1);
     count = 0;
+    
+    all_p = [];
     
     pertDir = zeros(1,size(doFiles,1));
     for iFile = 1:size(doFiles,1)
         % load tuning and class info
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
+        
+        if do_dir_anova
+            disp('Doing f-test on direction...');
+            fr = t(1).fr; theta = t(1).theta;
+            p = zeros(1,size(fr,2));
+            for k = 1:size(fr,2)
+                p(k) = anovan(fr(:,k),theta,'display','off');
+            end
+        end
+        
+        
+        
+        
         % get direction of perturbation to flip the clockwise ones to align
         if flipClockwisePerts
             % gotta hack it
-            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            dataPath = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
             switch lower(t(1).params.exp.angle_dir)
@@ -247,6 +265,12 @@ for iAxis = 1:length(axisNames)
         
         cellWidths{iFile} = fileWidths(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes);
         cellR2{iFile} = {r2_bl(idx_bl), r2_ad(idx_ad), r2_wo(idx_wo)};
+        
+        cellSG{iFile} = sg_bl(idx_bl,:);
+        
+        if do_dir_anova
+            all_p = [all_p, p(all(c(whichBlock).istuned(:,[1,3]),2))];
+        end
     end
     
     %
@@ -263,13 +287,17 @@ for iAxis = 1:length(axisNames)
     r2s = [];
     widths = [];
     all_pds = [];
+    all_sg = [];
     for iFile = 1:size(doFiles,1)
         pds = cellPDs{iFile};
         mds = cellMDs{iFile};
         bos = cellBOs{iFile};
         frs = cellFRs{iFile};
         
+        sg = cellSG{iFile};
+        
         all_pds = [all_pds; pds{1}];
+        all_sg = [all_sg; sg];
         
         pd_bl = [pd_bl; pds{1}.*(180/pi)];
         pd_ad = [pd_ad; pds{2}.*(180/pi)];

@@ -17,6 +17,8 @@ idx = ones(size(trial_data));
 for i = 1:2:length(varargin)
     if ischar(varargin{i+1})
         idx = idx & strcmpi({trial_data.(varargin{i})},varargin{i+1});
+    elseif iscell(varargin{i+1})
+        idx = idx & ismember({trial_data.(varargin{i})},varargin{i+1});
     else
         idx = idx & [trial_data.(varargin{i})] == varargin{i+1};
     end

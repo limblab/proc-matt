@@ -1,5 +1,5 @@
 % plot charts and graphs summarizing classifications
-classifierBlocks = [1 4 7];
+% classifierBlocks = [1 4 7];
 
 reassignOthers = true;
 
@@ -10,7 +10,7 @@ classLabels = {'Kin','Dyn','Mem I','Mem II','Other'};
 groupLabels = {'Chewie','Mihili'};
 
 % Do movement tuning
-paramSetName = 'movement';
+% paramSetName = 'movement';
 
 numClasses = length(classLabels);
 

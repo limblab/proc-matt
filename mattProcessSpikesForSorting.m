@@ -49,7 +49,7 @@ end
                 NEV.Data.Spikes = NEV_spikes_struct;
                 
                 % ALSO REMOVES THE 001 FROM THE END, DO -4 IF KEEP IT
-                save([file_path MetaTags.NEVlist{iFile}(1:end-8) '-s'],'NEV')
+                save([file_path MetaTags.NEVlist{iFile}(1:end-4)],'NEV')
             end
             status = 'processed';
         else

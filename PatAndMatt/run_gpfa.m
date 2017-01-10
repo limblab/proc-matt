@@ -48,9 +48,9 @@ dat = repmat(struct(),size(trial_data));
 for iTrial = 1:length(dat)
     dat(iTrial).trialId = iTrial;
     if strcmpi(arrays,'Both')
-        dat(iTrial).spikes = full([trial_data(iTrial).M1_spikes; trial_data(iTrial).PMd_spikes]);
+        dat(iTrial).spikes = [trial_data(iTrial).M1_spikes, trial_data(iTrial).PMd_spikes]';
     else
-        dat(iTrial).spikes = full(trial_data(iTrial).([arrays '_spikes']));
+        dat(iTrial).spikes = trial_data(iTrial).([arrays '_spikes'])';
     end
 end
 
@@ -58,7 +58,7 @@ end
 runIdx = ['-' arrays];
 
 % Extract neural trajectories
-result = neuralTraj_limblab(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
+result = neuralTraj_matt(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
     'kernSDList', kernSD,'binWidth',bin_w,'dataBinWidth',data_bin_w);
 
 % Orthonormalize neural trajectories
@@ -86,5 +86,5 @@ gpfa_out.params.data_bin_width = data_bin_w;
 
 % add trajectory information to trial_data struct
 for iTrial = 1:length(trial_data)
-    trial_data(iTrial).([arrays '_gpfa']) = seqTrain(iTrial).xorth;
+    trial_data(iTrial).([arrays '_gpfa']) = seqTrain(iTrial).xorth';
 end

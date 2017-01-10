@@ -1,4 +1,4 @@
-function badUnits = checkUnitGuides(varargin)
+function [badUnits, varargout] = checkUnitGuides(varargin)
 % CHECKUNITS Checks to ensure units are consistent across all inputs. Unit
 % IDs are expected to be defined by the first column.
 %
@@ -33,3 +33,8 @@ for i = 2:length(varargin)
 end
 
 badUnits = unique(badUnits,'rows');
+
+% return indices of rows with badUnits for each guide
+for i = 1:length(varargin)
+    varargout{i} = ismember(varargin{i},badUnits,'rows');
+end

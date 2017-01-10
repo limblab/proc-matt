@@ -6,7 +6,7 @@ monkeyColors = {'r','b','g'};
 %   2) Pool across sessions in blocks to match the neural data
 epochs = {'BL','AD','WO'};
 useMetrics = {'errors'};
-numTrials = 150;
+numTrials = 200;
 remOutliers = false;
 
 for iTask = 1:length(useTasks)
@@ -17,8 +17,8 @@ for iTask = 1:length(useTasks)
             x_max = 0.2;
         case 'errors'
             valScale = (180/pi);
-            x_min = -50;
-            x_max = 50;
+            x_min = -35;
+            x_max = 35;
     end
     
     h = figure('Position',[400 400 650 550]);
@@ -67,7 +67,7 @@ for iTask = 1:length(useTasks)
         % find minimum length of trials for each epoch
         %         trialMins = numTrials.*ones(1,length(epochs));
 %         trialMins = min(cellfun(@(x) length(x),results),[],1);
-        trialMins = [100, 200, 100];
+        trialMins = [100, 128, 189];
         
         if remOutliers
             disp('Removing outliers at 3x std of baseline...');
@@ -135,8 +135,16 @@ for iTask = 1:length(useTasks)
             %                 plot(cell2mat(sResults),'Color',[0.7 0.7 0.7],'LineWidth',0.5);
             
             % plot mean across sessions for each trial
-            plot(repmat(1:trialMins(iEpoch),size(sResults,1),1),cell2mat(sResults),'o','LineWidth',1,'Color',[0.7 0.7 0.7],'MarkerSize',4);
-            plot(1:trialMins(iEpoch),nanmean(cell2mat(sResults),2),'k','LineWidth',2);
+            %             plot(repmat(1:trialMins(iEpoch),size(sResults,1),1),cell2mat(sResults),'o','LineWidth',1,'Color',[0.7 0.7 0.7],'MarkerSize',4);
+            
+            fuck_matlab = nanmean(cell2mat(sResults),2);
+            plot(1:trialMins(iEpoch),fuck_matlab,'b+','LineWidth',2);
+            
+            % fit trendline and plot it
+            [fit,~,~,~,s] = regress(fuck_matlab,[ones(trialMins(iEpoch),1), (1:trialMins(iEpoch))']);
+            hold all; 
+            plot(1:trialMins(iEpoch),fit(1)+(1:trialMins(iEpoch))*fit(2),'k-','LineWidth',3);
+            
             
             %             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) - std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');
             %             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) + std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');

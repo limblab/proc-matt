@@ -15,20 +15,16 @@ function trial_data = truncateAndBin(trial_data,varargin)
 % EXAMPLE:
 %   trial_data = truncateAndBin(trial_data, 5, {'idx_target_on',0}, {'idx_trial_end',-3});
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-kin_vars = {'pos','vel','acc','force','emg'}; % hard coded list of options
+kin_vars = {'pos','vel','speed','acc','force','emg','targ'}; % hard coded list of options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargin == 2 % only a bin size was passed. Just rebin.
     do_trunc = false;
-    
-    do_bin = true;
     bin_size = varargin{1};
 elseif nargin == 3 % only the start/end indices were passed. Just truncate.
     do_trunc = true;
     idx_start = varargin{1};
     idx_end = varargin{2};
-    
-    do_bin = false;
     bin_size = 1;
 elseif nargin == 4
     do_trunc = true;
@@ -37,7 +33,6 @@ elseif nargin == 4
     idx_start = varargin{temp(1)};
     idx_end = varargin{temp(2)};
     
-    do_bin = true;
     bin_size = varargin{cellfun(@(x) ~iscell(x),varargin)};
 else
     error('Inputs not recognized.');

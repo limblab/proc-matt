@@ -27,7 +27,7 @@ function findMemoryCells(params,arrays)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-procDirName = 'Processed';
+procDirName = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -84,7 +84,7 @@ for iMethod = 1:length(tuneMethods)
                         %   first column is PDs, second is MDs
                         [istuned, sg] = excludeCells(params,data,t.tuning,tracking,useArray);
                         tunedCells = sg(all(istuned,2),:);
-                        disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                        disp(['There are ' num2str(length(tunedCells)) ' / ' num2str(size(sg,1)) ' cells tuned in all epochs...']);
                         
                         s(iBlock).classes = cellClass;
                         s(iBlock).sg = sg;
@@ -104,13 +104,17 @@ for iMethod = 1:length(tuneMethods)
                         % Should really reconsider this all eventually
                         params.classes.classifierBlocks = classifierBlocks(iBlock,:);
                         [istuned, sg] = excludeCells(params,data,t.tuning,tracking,useArray);
+                        
+                        iscell = all(istuned(:,1:4),2);
+                        
                         params.classes.classifierBlocks = classifierBlocks;
                         
                         tunedCells = sg(all(istuned,2),:);
-                        disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                        disp(['There are ' num2str(length(tunedCells)) ' / ' num2str(sum(iscell)) ' cells tuned in all epochs...']);
                         
                         s(iBlock).classes = cellClass;
                         s(iBlock).sg = sg;
+                        s(iBlock).iscell = iscell;
                         s(iBlock).istuned = istuned;
                         s(iBlock).tuned_cells = tunedCells;
                         s(iBlock).params = params;

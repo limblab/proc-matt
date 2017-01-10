@@ -16,7 +16,7 @@ tuningStatTest = params.tuning.tuningStatTest;
 %% Get data
 sg = data.(useArray).sg;
 
-[fr,theta,mt,force_rms,vel,force] = getFR(data,params,useArray,tuningPeriod);
+[fr,theta,mt,force_rms,vel,force,theta_hand] = getFR(data,params,useArray,tuningPeriod);
 
 % Do bootstrapping with regression
 switch lower(tuningStatTest)
@@ -32,11 +32,19 @@ end
 for iBlock = 1:length(fr)
     disp(['%% Block ' num2str(iBlock) ' of ' num2str(length(fr)) '...']);
     
-    if ~includeSpeed
-        [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr{iBlock},theta{iBlock},statTestParams,'doplots',doPlots);
+    if strcmpi(params.paramSetName,'movement_mp') && strcmpi(data.meta.epoch,'ad') && strcmpi(data.meta.perturbation,'ff')
+        disp('Using motor plan a la Vaadia...');
+        [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr{iBlock},theta_hand{iBlock},statTestParams,'doplots',doPlots);
     else
-        [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves_Moran(fr{iBlock},theta{iBlock},vel{iBlock},statTestParams,'doplots',doPlots);
+        if ~includeSpeed
+            [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr{iBlock},theta{iBlock},statTestParams,'doplots',doPlots);
+        else
+            disp('Using Moran/Schwartz speed model...');
+            [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves_Moran(fr{iBlock},theta{iBlock},vel{iBlock},statTestParams,'doplots',doPlots);
+        end
     end
+    
+
     
     pds = tcs(:,3);
     pd_cis = cbs{3};
@@ -57,6 +65,7 @@ for iBlock = 1:length(fr)
     out(iBlock).sg = sg;
     out(iBlock).fr = fr{iBlock};
     out(iBlock).theta = theta{iBlock};
+    out(iBlock).theta_hand = theta_hand{iBlock};
     out(iBlock).mt = mt{iBlock};
     out(iBlock).forces = force_rms{iBlock};
     out(iBlock).force_mean = force{iBlock};

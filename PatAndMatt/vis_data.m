@@ -32,7 +32,7 @@ function [ ] = vis_data( trial_data, param_struct )
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isfield(param_struct,'trials'), trials_to_plot = param_struct.trials; else error('No trials specified.'); end
-if isfield(param_struct,'signals'), plot_signals = param_struct.signals; else plot_signals = {'vel','acc'}; end
+if isfield(param_struct,'signals'), plot_signals = param_struct.signals; else plot_signals = {'vel'}; end
 if isfield(param_struct,'plot_gpfa'), plot_gpfa = param_struct.plot_gpfa; else plot_gpfa = false; end
 if isfield(param_struct,'gpfa_dims'), gpfa_dims = param_struct.gpfa_dims; else gpfa_dims = 1:3; end
 if isfield(param_struct,'gpfa_array'), gpfa_array = param_struct.gpfa_array; else gpfa_array = 'M1'; end

@@ -9,6 +9,7 @@ params.outDir = '';         % directory where the processed data and results are
 params.paramSetName = '';   % name for this parameter set. Blank by default, to be filled in later. Good for keeping track of results.
 
 params.useUnsorted = false; % include unsorted waveforms?
+params.shuntCheck = true;   % check for shunted channels with crosstalk_analysis and exclude them
 params.MonkeyID = 0;        % ID for animal-specific parameters. Default to 0, set later. 1=MrT, 2=Chewie, 3=Mihili
 
 params.useTasks = {'CO','RT','FF','VR','CS'};       % some analysis methods only work on specific tasks (ie CO or RT, FF or VR)
