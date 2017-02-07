@@ -11,10 +11,6 @@ end
 
 dataSummary;
 
-basenames = {'trainad','trainad','trainad','trainad'};
-extranames = {'','','potent_bl','null_bl'};
-array_models = {'M1-M1','PMd-PMd','PMd-M1','PMd-M1'};
-
 % % M1PMd sessions
 sessions = { ...
     'Chewie','2016-09-09'; ... % VR
@@ -68,12 +64,8 @@ sessions = { ...
 
 
 
-% 
-% basenames = {'glm_encoding_pca_without_smoothing\trainad','glm_encoding_pca_without_smoothing\trainad'};
-% extranames = {'potent_bl','null_bl'};
-% array_models = {'PMd-M1','PMd-M1'};
 
-basenames = {'trainad','trainad','trainad','glm_encoding_pca_without_smoothing\trainad','glm_encoding_pca_without_smoothing\trainad'};
+basenames = {'trainad','trainad','trainad','trainad','trainad'};
 extranames = {'','','','potent_bl','null_bl'};
 array_models = {'M1-M1','PMd-PMd','PMd-M1','PMd-M1','PMd-M1'};
 

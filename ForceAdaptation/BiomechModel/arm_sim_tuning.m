@@ -1,7 +1,7 @@
 %% Do onset to peak tuning
 coordinate_frame = 'movement';
-blocks = {'BL',[0 1]; 'AD',[0 0.33]; 'AD',[0.33 0.66]; 'AD',[0.66 1]; 'WO',[0 0.33]; 'WO',[0.33 0.66]; 'WO',[0.66 1]};
-% blocks = {'BL',[0 1]; 'AD',[0.66 1]; 'WO',[0.66 1]};
+% blocks = {'BL',[0 1]; 'AD',[0 0.33]; 'AD',[0.33 0.66]; 'AD',[0.66 1]; 'WO',[0 0.33]; 'WO',[0.33 0.66]; 'WO',[0.66 1]};
+blocks = {'BL',[0 1]; 'AD',[0.66 1]; 'WO',[0.66 1]};
 % blocks = {'BL',[0 1]};
 angle_bin_size = 45*pi/180;
 
@@ -82,7 +82,8 @@ end
 %% Do sliding window tuning
 if do_sliding_window_bullshit
     coordinate_frame = 'movement';
-    blocks = {'BL',[0 1]; 'AD',[0.33 1]};
+    blocks = {'BL',[0 1]; 'AD',[0 1]};
+    disp('HEY DOING WEIRD BLOCK THING FOR DUPLICATING BASELINE FUCK');
     angle_bin_size = 45*pi/180;
     time_delay = 0;
     hold_time = 50;
@@ -100,8 +101,9 @@ if do_sliding_window_bullshit
     params.sw_params = sw_params;
     
     %
+    disp('HEY YOURE ONLY DOING SIX BLOCKS');
     clear sw_data;
-    for iBlock = 1:numBlocks
+    for iBlock = 1:6%numBlocks
         clear temp temp2;
         for i = 1:length(use_models)
             theta = zeros(length(sim_data),1);

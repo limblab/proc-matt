@@ -3,28 +3,28 @@ clear;
 clc;
 
 filenames = { ...
-    'Chewie_CO_FF_2013-10-22', ...
-    'Chewie_CO_FF_2013-10-23', ...
-    'Chewie_CO_FF_2013-10-31', ...
-    'Chewie_CO_FF_2013-11-01', ...
-    'Chewie_CO_FF_2013-12-03', ...
-    'Chewie_CO_FF_2013-12-04', ...
-    'Chewie_CO_FF_2015-07-01', ...
+%     'Chewie_CO_FF_2013-10-22', ...
+%     'Chewie_CO_FF_2013-10-23', ...
+%     'Chewie_CO_FF_2013-10-31', ...
+%     'Chewie_CO_FF_2013-11-01', ...
+%     'Chewie_CO_FF_2013-12-03', ...
+%     'Chewie_CO_FF_2013-12-04', ...
+%     'Chewie_CO_FF_2015-07-01', ...
     'Chewie_CO_FF_2015-07-03', ...
-    'Mihili_CO_FF_2014-02-03', ...
-    'Mihili_CO_FF_2014-02-17', ...
-    'Mihili_CO_FF_2014-02-18', ...
-    'Mihili_CO_FF_2014-03-07', ...
-    'Mihili_CO_FF_2015-06-11', ...
-    'Mihili_CO_FF_2015-06-17', ...
-    'Chewie_CO_FF_2015-06-29', ...
-    'Chewie_CO_FF_2015-06-30', ...
-    'Chewie_CO_FF_2015-07-06', ...
-    'Chewie_CO_FF_2015-07-07', ...
-    'Chewie_CO_FF_2015-07-08', ...
-    'Mihili_CO_FF_2015-06-10', ...
-    'Mihili_CO_FF_2015-06-15', ...
-    'Mihili_CO_FF_2015-06-16', ...
+%     'Mihili_CO_FF_2014-02-03', ...
+%     'Mihili_CO_FF_2014-02-17', ...
+%     'Mihili_CO_FF_2014-02-18', ...
+%     'Mihili_CO_FF_2014-03-07', ...
+%     'Mihili_CO_FF_2015-06-11', ...
+%     'Mihili_CO_FF_2015-06-17', ...
+%     'Chewie_CO_FF_2015-06-29', ...
+%     'Chewie_CO_FF_2015-06-30', ...
+%     'Chewie_CO_FF_2015-07-06', ...
+%     'Chewie_CO_FF_2015-07-07', ...
+%     'Chewie_CO_FF_2015-07-08', ...
+%     'Mihili_CO_FF_2015-06-10', ...
+%     'Mihili_CO_FF_2015-06-15', ...
+%     'Mihili_CO_FF_2015-06-16', ...
     };
 
 for iFile = 1:length(filenames)
@@ -32,19 +32,23 @@ for iFile = 1:length(filenames)
     clearvars -except filenames iFile;
     close all;
     clc;
+    
+    dataSummary;
+
     iFile
     
-    root_dir = 'F:\TrialDataFiles\';
-    out_dir = fullfile(root_dir,'biomech_model\');
-    do_sim = false; %if false just redo tuning and use old model
-    do_neurons = true;
-    do_tuning = true;
+    dataDir = fullfile(rootDir,TDDir);
     
-    do_sliding_window_bullshit = true;
+    outDir = fullfile(rootDir,resultsDir,'biomech_model');
+    do_sim = true; %if false just redo tuning and use old model
+    do_neurons = false;
+    do_tuning = false;
+    
+    do_sliding_window_bullshit = false;
     tune_real_neurons = false;
     
     % load in trial data
-    load([root_dir filenames{iFile} '.mat'],'trial_data');
+    load(fullfile(dataDir,[filenames{iFile} '.mat']),'trial_data');
     
     %
     use_models = {'muscle'};
@@ -86,11 +90,11 @@ for iFile = 1:length(filenames)
     TH_2_max = pi; % maximum elbow angle
     
     %%% muscle model
-    simple_muscle_model = false;
+    simple_muscle_model = true;
     use_insertion_angles = false;
     
     %%% neural activity model
-    num_neurons = 500;
+    num_neurons = 100;
     muscle_gains = [1,1,1,1,1,1]; % gain terms for [sh flex, sh ext, el flex, el ext]
     use_muscle_model = 'all'; %'single','joint','synergy','all'
     weight_distribution = 'gaussian'; %'uniform','gaussian','skewgauss'
@@ -110,12 +114,23 @@ for iFile = 1:length(filenames)
         'num_neurons',num_neurons,'muscle_gains',muscle_gains,'use_muscle_model',use_muscle_model,'mean_lag',mean_lag,'std_lag',std_lag, ...
         'simple_muscle_model',simple_muscle_model,'weight_distribution',weight_distribution,'left_arm',left_arm);
     
-    if isfield(trial_data(1),'result'),
+    if isfield(trial_data(1),'result')
         trial_data = trial_data(getTDidx(trial_data,'result','R'));
     end
     
     %trial_data = trial_data(getTDidx(trial_data,'epoch','BL'));
         
+    
+    disp('Doing weird baseline copy thing')
+    temp_bl = trial_data(getTDidx(trial_data,'epoch','BL'));
+    temp_ad = trial_data(getTDidx(trial_data,'epoch','BL'));
+    temp_wo = trial_data(getTDidx(trial_data,'epoch','BL'));
+    for i = 1:length(temp_bl)
+        temp_ad(i).epoch = 'AD';
+        temp_wo(i).epoch = 'WO';
+    end
+    trial_data = [temp_bl,temp_ad,temp_wo]; clear temp_bl temp_ad temp_wo;
+    
     if do_sim
         % do modeling
         disp('Calculating kinematics and dynamics...');
@@ -123,28 +138,28 @@ for iFile = 1:length(filenames)
         arm_sim_muscles;
 
         % save data
-        save([out_dir filenames{iFile} '_sim.mat'],'sim_data','params');
+        save(fullfile(outDir,[filenames{iFile} '_sim.mat']),'sim_data','params');
     end
     
     if do_neurons
         % Now, generate neural activity for each trial
         % save data
-        load([out_dir filenames{iFile} '_sim.mat'],'sim_data','params');
+        load(fullfile(outDir,[filenames{iFile} '_sim.mat']),'sim_data','params');
         
         arm_sim_neurons;
 
         % save data
-        save([out_dir filenames{iFile} '_neurons.mat'],'sim_data','neural_tcs','params');
+        save(fullfile(outDir,[filenames{iFile} '_neurons.mat']),'sim_data','neural_tcs','params');
         
     end
     
     if do_tuning
         disp('Using old data...')
-        load([out_dir filenames{iFile} '_neurons.mat'],'sim_data','neural_tcs','params');
+        load(fullfile(outDir,[filenames{iFile} '_neurons.mat']),'sim_data','neural_tcs','params');
         
         arm_sim_tuning;
         
-        save([out_dir filenames{iFile} '_tuning.mat'],'sw_data','tc_data','params');
+        save(fullfile(outDir,[filenames{iFile} '_tuning.mat']),'sw_data','tc_data','params');
         
     end
 end

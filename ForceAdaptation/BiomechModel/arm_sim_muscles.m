@@ -2,16 +2,16 @@ cf_count = 0;
 for iTrial = 1:length(trial_data)
     
     if strcmpi(trial_data(iTrial).epoch,'AD')
-        K = trial_data(iTrial).perturbation_info(1); % curl field constant
+        K = 0.1*trial_data(iTrial).perturbation_info(1); % curl field constant
     else
         K = 0;
     end
     TH_c = trial_data(iTrial).perturbation_info(2); % angle of curl field application
     
-    % get position and convert to meters
+    % get position/velocity and convert to meters
     p = (trial_data(iTrial).pos - repmat(pos_offset,size(trial_data(iTrial).pos,1),1) + repmat(origin_pos,size(trial_data(iTrial).pos,1),1)) / 100;
-    
     v = trial_data(iTrial).vel / 100;
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% calculate joint angles
     th = zeros(size(p,1),2);
@@ -52,8 +52,7 @@ for iTrial = 1:length(trial_data)
     %%% calculate curl field force vector
     Fc = zeros(size(v,1),2);
     for t = 1:size(v,1)
-        %Fc(t,:) = 100 * K * [cos(TH_c)*v(t,1) + sin(TH_c)*v(t,2), sin(TH_c)*v(t,1) - cos(TH_c) * v(t,2)];
-        Fc(t,:) = 100*K * [cos(TH_c)*v(t,1) + sin(TH_c)*v(t,2), -sin(TH_c)*v(t,1) + cos(TH_c) * v(t,2)];
+        Fc(t,:) = 100 * K * [cos(TH_c) * v(t,1) + sin(TH_c)*v(t,2), -sin(TH_c)*v(t,1) + cos(TH_c) * v(t,2)];
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,36 +73,27 @@ for iTrial = 1:length(trial_data)
     T_plan = zeros(size(ddth,1),2);
     T_force = zeros(size(ddth,1),2);
     for t = 1:size(ddth,1)
-        if 1
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % build matrix of inertial terms
-            ddTerms = [A + 2*B*cos(th(t,2)), C + B*cos(th(t,2)); ...
-                C + B*cos(th(t,2)),   C];
-            % build matrix of coriolis terms
-            dTerms = [-B*sin(th(t,2))*dth(t,2), -B*sin(th(t,2))*(dth(t,1) + dth(t,2)); ...
-                B*sin(th(t,2))*dth(t,1),  0];
-            
-            % compute torques for this time
-            %T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' - fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
-            forceTorques1 = cross([p(t,:),0],[Fc(t,:),0]); % shoulder torque
-            forceTorques2 = cross([p(t,:)-[L1*cos(th(t,1)), L1*sin(th(t,1))],0],[Fc(t,:),0]); % elbow torque
-            
-            T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' + [forceTorques1(3);forceTorques2(3)];
-            
-            T_plan(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)';
-            T_force(t,:) = [forceTorques1(3),forceTorques2(3)];
-        else
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % THIS METHOD ASSUMES SAME MASS AND LENGTH
-            %   NOTE: CURRENTLY PROBABLY BROKEN
-            % %                 T(t,1) = (1/2*M1*L1^2) * ( ddth(t,1)*2*(5/3 + cos(th(t,2))) + ddth(t,2)*(2/3 + cos(th(t,2))) + sin(th(t,2))*dth(t,2)*(2*dth(t,1)+dth(t,2)) );
-            % %                 T(t,2) = (1/2*M2*L2^2) * ( ddth(t,1)*(2/3 + cos(th(t,2))) + ddth(t,2)*2/3 + sin(th(t,2))*(dth(t,1)^2) );
-            % %
-            % %                 T_force(t,:) = -fxTerms*Fc(t,1) + fyTerms*Fc(t,2);
-            % %
-            % %                 T_plan(t,:) = T(t,:);
-            % %                 T(t,:) = T(t,:) + T_force(t,:);
-        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % build matrix of inertial terms
+        ddTerms = [A + 2*B*cos(th(t,2)), C + B*cos(th(t,2)); ...
+            C + B*cos(th(t,2)),   C];
+        % build matrix of coriolis terms
+        dTerms = [-B*sin(th(t,2))*dth(t,2), -B*sin(th(t,2))*(dth(t,1) + dth(t,2)); ...
+            B*sin(th(t,2))*dth(t,1),  0];
+        
+        % compute torques for this time - cross product
+        % forceTorques1 = cross([p(t,:),0],[Fc(t,:),0]); % shoulder torque
+        % forceTorques2 = cross([p(t,:)-[L1*cos(th(t,1)), L1*sin(th(t,1))],0],[Fc(t,:),0]); % elbow torque
+        
+        % jacobian method (gives same result as cross product)
+        J = [-L1*sin(th(t,1)) - L2*sin(th(t,1)+th(t,2)), -L2*sin(th(t,1)+th(t,2));
+            L1*cos(th(t,1)) + L2*cos(th(t,1)+th(t,2)),  L2*cos(th(t,1)+th(t,2))];
+        cfTorques = J'*Fc(t,:)';
+        
+        T(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)' + cfTorques;
+        
+        T_plan(t,:) = ddTerms * ddth(t,:)' + dTerms * dth(t,:)';
+        T_force(t,:) = cfTorques;
     end
     
     sim_data(iTrial).kin.real.pos = p;
