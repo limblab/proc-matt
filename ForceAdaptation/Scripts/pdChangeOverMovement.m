@@ -9,6 +9,7 @@ useMasterTuned = slidingParams.useMasterTuned; % whether to use tuning from stan
 doAbs = slidingParams.doAbs; % take absolute of difference between epochs
 doMD = slidingParams.doMD; % take absolute of difference between epochs
 doMDNorm = slidingParams.doMDNorm; % whether to normalize by baseline modulation depth
+doPDNorm = slidingParams.doPDNorm;
 metric = slidingParams.metric;
 plotClasses = slidingParams.plotClasses;
 
@@ -98,12 +99,15 @@ for iMonkey = 1:length(monkeys)
         masterTuned = cell(size(doFiles,1),1);
         masterTunedClasses = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,useMasterTunedName,'regression','onpeak');
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,useMasterTunedName,'regression','onpeak');
             
             masterTunedSG{iFile} = c.tuned_cells;
             masterTuned{iFile} = all(c.istuned(:,whichTuned),2);
             
             masterTunedClasses{iFile} = c.classes(masterTuned{iFile},2);
+            
+            dpd = angleDiff(t(1).pds(:,1),t(4).pds(:,1),true,true);
+            masterTunedDPDs{iFile} = dpd(masterTuned{iFile});
         end
     end
     
@@ -180,6 +184,7 @@ for iMonkey = 1:length(monkeys)
                 if useMasterTuned
                     tunedCells = masterTunedSG{iFile};
                     tunedClasses = masterTunedClasses{iFile};
+                    tunedDPDs = masterTunedDPDs{iFile};
                 else
                     if doWidthSeparation
                         tunedCells = sg(all(c(iWin).istuned(:,whichTuned),2) & wfTypes,:);
@@ -243,6 +248,8 @@ for iMonkey = 1:length(monkeys)
         ad_pds = [];
         wo_pds = [];
         
+        tunedDPDs = masterTunedDPDs{iFile};
+        
         bl_neurons = cellPDs{iFile,1};
         ad_neurons = cellPDs{iFile,2};
         wo_neurons = cellPDs{iFile,3};
@@ -264,15 +271,20 @@ for iMonkey = 1:length(monkeys)
         
         % now find difference from baseline
         if ~doMD
+            
             bl_ad = zeros(size(bl_pds));
             bl_wo = zeros(size(bl_pds));
             for unit = 1:size(bl_pds,1)
                 bl_ad(unit,:) = pertDir(iFile)*angleDiff(bl_pds(unit,:),ad_pds(unit,:),true,~doAbs);
                 bl_wo(unit,:) = pertDir(iFile)*angleDiff(bl_pds(unit,:),wo_pds(unit,:),true,~doAbs);
             end
-            
-            dPDs{iFile,1} = bl_ad;
-            dPDs{iFile,2} = bl_wo;
+            if doPDNorm
+                dPDs{iFile,1} = bl_ad./repmat(tunedDPDs,1,size(bl_ad,2));
+                dPDs{iFile,2} = bl_wo./repmat(tunedDPDs,1,size(bl_wo,2));
+            else
+                dPDs{iFile,1} = bl_ad;
+                dPDs{iFile,2} = bl_wo;
+            end
         else
             if doMDNorm
                 bl_ad = [];

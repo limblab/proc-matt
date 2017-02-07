@@ -32,6 +32,7 @@ end
 cov_array = params.cov_array;
 pred_array = params.pred_array;
 do_pca = params.do_pca;
+smooth_pca_proj_spikes = params.smooth_pca_proj_spikes;
 if ischar(do_pca)
     pca_dims = params.pca_dims.(cov_array); % get dimensions for the covariate array
 end
@@ -57,7 +58,12 @@ end
 if ischar(do_pca)
     for trial = 1:length(trial_data)
         temp = sqrt(trial_data(trial).([cov_array '_spikes']));
-        temp = smoothSpikesForPCA(temp,params.bin_size,2*params.bin_size);
+        if smooth_pca_proj_spikes
+            disp('Smoothing PCA projection spikes...');
+            temp = smoothSpikesForPCA(temp,params.bin_size,2*params.bin_size);
+        end
+        % de-mean data
+        temp = temp - repmat(params.pca_mu,size(temp,1),1);
         temp = temp*params.pca_w;
         if ~ischar(pca_dims)
             temp = temp(:,pca_dims);

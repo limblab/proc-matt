@@ -24,6 +24,7 @@ whichScript = 3;
 
 % Now a bunch of parameters and necessary info
 root_dir = 'F:\results\m1_cf_JNS_results\';
+% root_dir = 'F:\';
 
 useArray = 'M1'; % Monkey sessions are filtered by array
 useMonkeys = {'Chewie','Mihili'};
@@ -82,6 +83,7 @@ slidingParams.useMasterTuned = true; % whether to use tuning from standard 'move
 slidingParams.doAbs = true; % take absolute of difference between epochs
 slidingParams.doMD = false;
 slidingParams.doMDNorm = true;
+slidingParams.doPDNorm = false;
 slidingParams.plotClasses = [1,2,3,4,5];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%

@@ -13,7 +13,7 @@ clc;
 
 % % SORTED
 doFiles = { ...
-    'Chewie','2016-10-13','FF','CO'; ...
+    'Chewie','2016-10-14','FF','CO'; ...
     };
 
 % MERGED
@@ -35,7 +35,7 @@ doFiles = { ...
 
 uarray = {'M1'};
 
-whichPart = [2]; % 1-merge,2-split,3-bdf
+whichPart = [1]; % 1-merge,2-split,3-bdf
 
 if ~iscell(uarray)
     uarray = {uarray};

@@ -182,8 +182,9 @@ for iAxis = 1:length(axisNames)
         
         % get direction of perturbation to flip the clockwise ones to align
         if flipClockwisePerts
+            pdDir = 'Processed';
             % gotta hack it
-            dataPath = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2});
+            dataPath = fullfile(root_dir,doFiles{iFile,1},pdDir,doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
             switch lower(t(1).params.exp.angle_dir)

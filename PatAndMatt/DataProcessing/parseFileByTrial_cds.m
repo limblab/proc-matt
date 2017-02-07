@@ -46,7 +46,7 @@ for i = 1:length(idx_trials)
         trial_data(i).epoch = inputArgs.meta.epoch;
         trial_data(i).task = cds.meta.task;
         trial_data(i).perturbation = inputArgs.meta.perturbation;
-        trial_data(i).target_direction = cds.trials.tgtDir(iTrial);
+        trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
         trial_data(i).trial_id = iTrial;
         trial_data(i).result = cds.trials.result(iTrial);
         

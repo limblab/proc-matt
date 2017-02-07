@@ -1,18 +1,24 @@
 % This will fit bootstrapped PDs to both hand direction (kinematic
 % velocity) and computed "hand force" (a la Vaadia)
+clear;
 close all;
 clc;
+
+dataSummary;
 
 use_array = 'M1';
 % how to partition trials
 %  First element of each row is the epoch
 %  Second element is a vector specifying proportional [start,end] of trials
+% tuning_blocks = {'BL',[0 1]; ...
+%     'AD',[0 0.33]; ...
+%     'AD',[0.33 0.66]; ...
+%     'AD',[0.66 1]; ...
+%     'WO',[0 0.5]; ...
+%     'WO',[0.5 1]};
 tuning_blocks = {'BL',[0 1]; ...
-    'AD',[0 0.33]; ...
-    'AD',[0.33 0.66]; ...
-    'AD',[0.66 1]; ...
-    'WO',[0 0.5]; ...
-    'WO',[0.5 1]};
+    'AD',[0.66 1]};% ...
+%     'WO',[0.66 1]};
 
 % some parameters for bootstrapping
 num_iterations = 1000;
@@ -23,15 +29,35 @@ dt = 0.01; % binned data bin size in sec
 m = 0.7; %kg
 idx_shift = 10; % how many 10ms bins to shift neural data
 
-doPos = true;
-doVel = true;
+doPos = false;
+doVel = false;
 doMP = true;
 nr_operation = 'replace'; % 'add' or 'replace'
 
 %% Get information about the available data
-dates = unique({trial_data.date});
-exclude_dates = {'2015-06-29'};
-dates = setdiff(dates,exclude_dates);
+filenames = { ...
+        'Chewie_CO_FF_2013-10-22', ...
+        'Chewie_CO_FF_2013-10-23', ...
+        'Chewie_CO_FF_2013-10-31', ...
+        'Chewie_CO_FF_2013-11-01', ...
+        'Chewie_CO_FF_2013-12-03', ...
+        'Chewie_CO_FF_2013-12-04', ...
+        'Chewie_CO_FF_2015-07-01', ...
+        'Chewie_CO_FF_2015-07-03', ...%     'Chewie_CO_FF_2015-06-29', ...
+        'Chewie_CO_FF_2015-06-30', ...
+        'Chewie_CO_FF_2015-07-06', ...
+        'Chewie_CO_FF_2015-07-07', ...
+        'Chewie_CO_FF_2015-07-08', ...
+    'Mihili_CO_FF_2014-02-03', ...
+    'Mihili_CO_FF_2014-02-17', ...
+    'Mihili_CO_FF_2014-02-18', ...
+    'Mihili_CO_FF_2014-03-07', ...
+    'Mihili_CO_FF_2015-06-11', ...
+    'Mihili_CO_FF_2015-06-17', ...
+    'Mihili_CO_FF_2015-06-10', ...
+    'Mihili_CO_FF_2015-06-15', ...
+    'Mihili_CO_FF_2015-06-16', ...
+    };
 
 %% Get directions and firing rates in the window
 all_d = [];
@@ -42,37 +68,24 @@ if ~exist('nr','var')
     nr = [];
     disp('Initializing neural results struct...');
 end
-for iFile = 1:length(dates)
+for iFile = 1:length(filenames)
     clc;
-    disp(['File ' num2str(iFile) ' of ' num2str(length(dates))]);
-    date_trial_inds = find(get_trial_data_indices(trial_data,'date',dates{iFile}));
+    disp(['File ' num2str(iFile) ' of ' num2str(length(filenames))]);
     
-    fr = zeros(length(date_trial_inds),size(trial_data(date_trial_inds(1)).([use_array '_spikes']),1));
-    theta_p = zeros(length(date_trial_inds),1);
-    theta_v = zeros(length(date_trial_inds),1);
-    theta_f = zeros(length(date_trial_inds),1);
-    target_directions = zeros(length(date_trial_inds),1);
-    for iInd = 1:length(date_trial_inds)
-        
-        iTrial = date_trial_inds(iInd);
+    load(fullfile(rootDir,TDDir,filenames{iFile}));
+    
+    fr = zeros(length(trial_data),size(trial_data(1).([use_array '_spikes']),2));
+    theta_p = zeros(length(trial_data),1);
+    theta_v = zeros(length(trial_data),1);
+    theta_f = zeros(length(trial_data),1);
+    target_directions = zeros(length(trial_data),1);
+    for iTrial = 1:length(trial_data)
         
         target_directions(iTrial) = trial_data(iTrial).target_direction;
         if isempty(trial_data(iTrial).idx_peak_speed) || (trial_data(iTrial).idx_peak_speed <= trial_data(iTrial).idx_movement_on)
-            [theta_p(iInd),theta_v(iInd),theta_f(iInd)] = deal(NaN);
-            fr(iInd,:) = NaN(1,size(fr,2));
+            [theta_p(iTrial),theta_v(iTrial),theta_f(iTrial)] = deal(NaN);
+            fr(iTrial,:) = NaN(1,size(fr,2));
         else
-            % determine force constant for this trial
-            if strcmpi(trial_data(iTrial).epoch,'AD')
-                k = trial_data(iTrial).perturbation_info(1); %Ns/cm
-                th = trial_data(iTrial).perturbation_info(2); %rad
-                if isnan(th)
-                    error('NOOOOOO!');
-                end
-            else
-                k = 0;
-                th = 0;
-            end
-            
             % get index between movement onset and peak speed
             %         idx = trial_data(iTrial).idx_movement_on:trial_data(iTrial).idx_movement_on+15;
             idx = trial_data(iTrial).idx_movement_on:trial_data(iTrial).idx_peak_speed;
@@ -85,31 +98,40 @@ for iFile = 1:length(dates)
             f = trial_data(iTrial).force(idx,:);
             
             % get angle of hand movement
-            theta_p(iInd) = atan2(p(end,2)-p(1,2),p(end,1)-p(1,1));
-            theta_v(iInd) = atan2(v(end,2),v(end,1));
+            theta_p(iTrial) = atan2(p(end,2)-p(1,2),p(end,1)-p(1,1));
+            theta_v(iTrial) = atan2(v(end,2),v(end,1));
             
             if strcmpi(trial_data(iTrial).epoch,'AD')
+                % determine force constant for this trial
+                K = trial_data(iTrial).perturbation_info(1); %Ns/cm
+                TH_c = trial_data(iTrial).perturbation_info(2); %rad
+                if isnan(TH_c)
+                    error('NOOOOOO!');
+                end
+                
                 % get robot force vector
                 f_robot = zeros(size(v,1),2);
                 f_hand = zeros(size(v,1),2);
                 f_plan = zeros(size(v,1),2);
                 for j = 1:size(v,1)
                     f_robot(j,:) = k.*[cos(th),-sin(th);sin(th),cos(th)]*v(j,:)';
-                    %f_hand(j,:) = (1/100).*m.*a(j,:); % 1/100 converts cm/s^2 to m/s^2
+                    % f_hand(j,:) = (1/100).*m.*a(j,:); % 1/100 converts cm/s^2 to m/s^2
+                    %f_robot(j,:) = K * [cos(TH_c)*v(j,1) + sin(TH_c)*v(j,2), -sin(TH_c)*v(j,1) + cos(TH_c) * v(j,2)];
                     f_hand(j,:) = f(j,:);
                     f_plan(j,:) = f_hand(j,:)' - f_robot(j,:)';
                 end
                 
                 % find time bin corresponding to peak of acceleration
                 [~,idx_peak] = max( hypot(f_plan(:,1),f_plan(:,2)) );
-                theta_f(iInd) = atan2(f_plan(idx_peak,2),f_plan(idx_peak,1));
+                theta_f(iTrial) = atan2(f_plan(idx_peak,2),f_plan(idx_peak,1));
+                %theta_f(iTrial) = atan2(rms(f_plan(:,2)),rms(f_plan(:,1)));
             else
-                theta_f(iInd) = theta_v(iInd);
+                theta_f(iTrial) = theta_v(iTrial);
             end
             
             % get firing rates in same window for each cell
-            spike_counts = full(trial_data(iTrial).([use_array '_spikes']));
-            fr(iInd,:) = sum(spike_counts(:,idx-idx_shift),2)/(length(idx)*dt);
+            spike_counts = trial_data(iTrial).([use_array '_spikes']);
+            fr(iTrial,:) = sum(spike_counts(idx-idx_shift,:),1)/(length(idx)*dt);
         end
     end
     
@@ -143,10 +165,11 @@ for iFile = 1:length(dates)
         
         for unit = 1:size(fr,2)
             % Add this cosine fit to my neuron database
-            analysis_info.date = dates{iFile};
-            analysis_info.monkey = trial_data(date_trial_inds(1)).monkey;
-            analysis_info.task = trial_data(date_trial_inds(1)).task;
-            analysis_info.perturbation = trial_data(date_trial_inds(1)).perturbation;
+            analysis_info.date = filenames{iFile};
+            analysis_info.monkey = trial_data(1).monkey;
+            analysis_info.task = trial_data(1).task;
+            analysis_info.perturbation = trial_data(1).perturbation;
+            analysis_info.pert_dir = trial_data(1).perturbation_info(2);
             analysis_info.array = use_array;
             analysis_info.neuron_id = unit;
             analysis_info.analysis_type = 'tuning';
@@ -183,7 +206,7 @@ for iFile = 1:length(dates)
     end
 end
 
-save('F:\trial_data_files\CO_FF_neuron_results.mat','nr')
+save(fullfile(rootDir,TDDir,'CO_FF_neuron_results.mat'),'nr')
 clc;
 disp('Done.');
 
@@ -191,17 +214,17 @@ disp('Done.');
 cell_idx = find(strcmpi({nr.monkey},'Mihili') | strcmpi({nr.monkey},'Chewie'));
 
 tw = 'onpeak';
-use_names = {'pos','mp'};
+use_names = {'mp'};
 plot_colors = {'k','r','b'};
 
-r2_min = 0.4;
+r2_min = 0.5;
 
 x_bins = -180:10:180;
 
 % first check if cells are tuned
 is_tuned = zeros(size(tuning_blocks,1),length(cell_idx),length(use_names));
 for i = 1:length(cell_idx)
-        unit = cell_idx(i);
+    unit = cell_idx(i);
     
     for iName = 1:length(use_names)
         n = use_names{iName};
@@ -218,10 +241,10 @@ for i = 1:length(cell_idx)
     end
 end
 
-use_tuning_blocks = 1:6;
+use_tuning_blocks = 1:2;
 always_tuned = zeros(length(cell_idx),length(use_tuning_blocks));
 for iBlock = 1:length(use_tuning_blocks)
-    always_tuned(:,iBlock) = all(squeeze(is_tuned(use_tuning_blocks(iBlock),:,:)),2);
+    always_tuned(:,iBlock) = all(is_tuned(use_tuning_blocks(iBlock),:),1);
 end
 
 tuned_cells = all(always_tuned,2);
@@ -249,18 +272,18 @@ for i = 1:length(cell_idx)
                 is_sig_diff(iBlock,i,iName) = 1;
             end
             
-            idx = find(get_trial_data_indices(trial_data,'date',nr(unit).date));
-            if length(trial_data(idx(1)).perturbation_info) > 2
-                dir_mult = -1;
-            else
-                dir_mult = sign(trial_data(idx(1)).perturbation_info(2));
-            end
+            %             idx = find(getTDidx(trial_data,'date',nr(unit).date));
+            %             if length(trial_data(idx(1)).perturbation_info) > 2
+            %                 dir_mult = -1;
+            %             else
+            %                 dir_mult = sign(trial_data(idx(1)).perturbation_info(2));
+            %             end
             
-            dpd(iBlock,i,iName) = dir_mult*(180/pi)*angleDiff(mean(nr(unit).tuning(idx_tune_bl).bootstrap(3,:),2),mean(nr(unit).tuning(idx_tune).bootstrap(3,:),2),true,true);
+            dpd(iBlock,i,iName) = sign(nr(unit).pert_dir)*(180/pi)*angleDiff(mean(nr(unit).tuning(idx_tune_bl).bootstrap(3,:),2),mean(nr(unit).tuning(idx_tune).bootstrap(3,:),2),true,true);
         end
     end
 end
-    
+
 figure;
 hold all;
 for iName = 1:length(use_names)
@@ -277,12 +300,10 @@ for iName = 1:length(use_names)
 end
 set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 size(tuning_blocks,1)+1]);
 
-% figure; hist(dpd(logical(all(is_tuned,2)),1),x_bins);
-% figure; hist(dpd(logical(all(is_tuned,2)),2),x_bins);
 
 %% Look at data
-doAbs = false;
 
+doAbs = false;
 figure;
 hold all;
 utheta = unique(target_directions);
@@ -301,7 +322,7 @@ for i = 1:length(utheta)
     idx = target_directions == utheta(i);
     plot(angleDiff(utheta(i),theta_v(idx),true,~doAbs),'b');
     plot(angleDiff(utheta(i),theta_f(idx),true,~doAbs),'r');
-    plot(a ngleDiff(theta_f(idx),theta_v(idx),true,~doAbs),'k');
+    plot(angleDiff(theta_f(idx),theta_v(idx),true,~doAbs),'k');
     
 end
 
