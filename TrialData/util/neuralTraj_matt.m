@@ -1,4 +1,4 @@
-function result = neuralTraj_limblab(runIdx, dat, directory, varargin)
+function result = neuralTraj_matt(runIdx, dat, directory, varargin)
 %
 % result = neuralTraj(runIdx, dat, ...)
 %
@@ -138,11 +138,11 @@ for cvf = 0:numFolds
     
     % The following does the heavy lifting.
     if isequal(method, 'gpfa')
-        result = gpfaEngine_limblab(seqTrain, seqTest, fname,...
+        result = gpfaEngine_matt(seqTrain, seqTest, fname,...
             'xDim', xDim, 'binWidth', binWidth, extraOpts{:});
         
     elseif ismember(method, {'fa', 'ppca', 'pca'})
-        result = twoStageEngine(seqTrain, seqTest, fname,...
+        result = twoStageEngine_matt(seqTrain, seqTest, fname,...
             'typ', method, 'xDim', xDim, 'binWidth', binWidth, extraOpts{:});
     end
     

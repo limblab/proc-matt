@@ -1,4 +1,4 @@
-function [trial_data, gpfa_out] = run_gpfa(trial_data,params)
+function [trial_data, gpfa_out] = runGPFA(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Run Gaussian Process Factor Analysis (GPFA) for a set of neural data.
 % 
@@ -10,7 +10,7 @@ function [trial_data, gpfa_out] = run_gpfa(trial_data,params)
 %                    Each element is a count of binned spikes. ARRAY is currently 'M1' and/or 'PMd'
 % 
 % Fields for params input struct:
-%   arrays      : which arrays to use (currently 'M1', 'PMd', or 'Both'). Required.
+%   arrays      : which arrays to use, e.g. 'M1' (put in cell for multiple)
 %   save_dir    : directory to save GPFA results in Byron's code. Pass in [] to skip (default)
 %   method      : gpfa, pca, etc. See Byron's code
 %   xdim        : assumed number of latent dimensions (default to 8, find optimal using CV)
@@ -43,19 +43,20 @@ if isfield(params,'bin_w'), bin_w = params.bin_w; else bin_w = 20; end
 if isfield(params,'data_bin_w'), data_bin_w = params.data_bin_w; else data_bin_w = 10; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if ~iscell(arrays), arrays = {arrays}; end
 % get the desired spikes
 dat = repmat(struct(),size(trial_data));
 for iTrial = 1:length(dat)
     dat(iTrial).trialId = iTrial;
-    if strcmpi(arrays,'Both')
-        dat(iTrial).spikes = [trial_data(iTrial).M1_spikes, trial_data(iTrial).PMd_spikes]';
-    else
-        dat(iTrial).spikes = trial_data(iTrial).([arrays '_spikes'])';
+    temp = [];
+    for array = 1:length(arrays)
+        temp = [temp, trial_data(iTrial).([arrays '_spikes'])];
     end
+    dat(iTrial).spikes = temp';
 end
 
 % Basic extraction of neural trajectories
-runIdx = ['-' arrays];
+runIdx = ['-' [arrays{:}]];
 
 % Extract neural trajectories
 result = neuralTraj_matt(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
@@ -86,5 +87,5 @@ gpfa_out.params.data_bin_width = data_bin_w;
 
 % add trajectory information to trial_data struct
 for iTrial = 1:length(trial_data)
-    trial_data(iTrial).([arrays '_gpfa']) = seqTrain(iTrial).xorth';
+    trial_data(iTrial).([[arrays{:}] '_gpfa']) = seqTrain(iTrial).xorth';
 end

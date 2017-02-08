@@ -78,11 +78,21 @@ for iS = 1:size(sessions,1)
     
     if makeTD,
         trial_data = [];
-        meta.angle_dir = filedb.Direction{s_idx};
-        meta.rotation_angle = filedb.VRAngle(s_idx);
-        meta.force_magnitude = filedb.FFMagnitude(s_idx);
-        meta.force_angle = filedb.FFAngle(s_idx);
         meta.perturbation = pert;
+        switch lower(filedb.Direction{s_idx})
+            case 'ccw'
+                perturbation_direction = 1;
+            case 'cw'
+                perturbation_direction = -1;
+        end
+        % for VR: angle (negative is clockwise); for FF: [magnitude, direction] (negative is clockwise)
+        switch lower(meta.perturbation)
+            case 'ff'
+                meta.perturbation_info = [filedb.FFMagnitude(s_idx), perturbation_direction*filedb.FFAngle(s_idx)];
+            case 'vr'
+                meta.perturbation_info = perturbation_direction*filedb.VRAngle(s_idx);
+        end
+        
     end
     
     somethingCDS = false; %flag variable

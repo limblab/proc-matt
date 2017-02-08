@@ -1,4 +1,4 @@
-function trial_data = parseFileByTrial(data,inputArgs)
+function trial_data = parseFileByTrial_bdf(data,inputArgs)
 % inputArgs:
 %   data: REQUIRED... my data struct
 %   binSize: default 0.01 sec

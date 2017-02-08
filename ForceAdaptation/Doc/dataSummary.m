@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % define the root directory for this database
-rootDir = '/Users/mgp046/Data/';
+define_root_dir;
 cerebusDataDir = 'CerebusData';
 CDSDir = 'CDS';
 TDDir = 'TrialDataFiles';

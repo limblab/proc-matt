@@ -2,7 +2,9 @@ function trial_data = parseFileByTrial_cds(cds,inputArgs)
 %   data: REQUIRED... cell array of CDS objects. Will concatenate together.
 %
 % inputArgs:
-%   meta: .perturbation, .epoch, .angle_dir, .rotation_angle, .force_magnitude, .force_angle (REQUIRED)
+%   meta: a struct with a field for each meta parameter you want attached to this file
+%       This can handle any arbitrary information
+%       For my learning stuff: .perturbation, .epoch, .angle_dir, .rotation_angle, .force_magnitude, .force_angle
 %   trialResults: which reward codes to use ('R','A','F','I')
 %   binSize: default 0.01 sec
 %   extraTime: [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
@@ -10,12 +12,12 @@ if isfield(inputArgs,'trialResults'), trialResults = inputArgs.trialResults; els
 if isfield(inputArgs,'excludeUnits'), excludeUnits = inputArgs.excludeUnits; else excludeUnits = [0,255]; end
 if isfield(inputArgs,'binSize'), binSize = inputArgs.binSize; else binSize = 0.01; end
 if isfield(inputArgs,'extraTime'), extraTime = inputArgs.extraTime; else extraTime = [0.2 0.2]; end
+if ~isfield(inputArgs,'meta'), warning('WARNING: no meta information provided.'); end
 % note: will discretize extraTime to nearest mutliple of binSize
 
 % some hard coded parameters
 min_ds = 0.3; % minimum diff(speed) to find movement onset
 min_trial_time = 0.1; % minimum time from start to end
-
 % do some input processing
 if ~iscell(trialResults), trialResults = {trialResults}; end
 
@@ -42,31 +44,18 @@ for i = 1:length(idx_trials)
         % add some meta data about the trial
         trial_data(i).monkey = cds.meta.monkey;
         trial_data(i).date = datestr(cds.meta.dateTime,'mm-dd-yyyy');
-        trial_data(i).epoch = inputArgs.meta.epoch;
         trial_data(i).task = cds.meta.task;
-        trial_data(i).perturbation = inputArgs.meta.perturbation;
         if any(abs(cds.trials.tgtDir) > 2*pi)
-            trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
+            trial_data(i).target_direction = minusPi2Pi(pi/180*cds.trials.tgtDir(iTrial));
         else
-            trial_data(i).target_direction = cds.trials.tgtDir(iTrial);
+            trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
         end
-        trial_data(i).target_direction = minusPi2Pi(trial_data(i).target_direction);
         trial_data(i).trial_id = iTrial;
         trial_data(i).result = cds.trials.result(iTrial);
         
-        switch lower(inputArgs.meta.angle_dir)
-            case 'ccw'
-                perturbation_direction = 1;
-            case 'cw'
-                perturbation_direction = -1;
-        end
-        
-        % for VR: angle (negative is clockwise); for FF: [magnitude, direction] (negative is clockwise)
-        switch lower(inputArgs.meta.perturbation)
-            case 'ff'
-                trial_data(i).perturbation_info = [inputArgs.meta.force_magnitude, perturbation_direction*inputArgs.meta.force_angle];
-            case 'vr'
-                trial_data(i).perturbation_info = perturbation_direction*inputArgs.meta.rotation_angle;
+        % loop along all meta fields
+        for fn = fieldnames(inputArgs.meta)
+            trial_data(i).(fn) = inputArgs.meta.(fn);
         end
         
         % find trial start/end times
@@ -78,29 +67,18 @@ for i = 1:length(idx_trials)
         
         % get kinematics for that trial
         idx = cds.kin.t >= t_start & cds.kin.t <= t_end;
-        switch 'decimate'
-            case 'interp'
-                trial_data(i).pos = [interp1(cds.kin.t(idx),cds.kin.x(idx),t_bins(1:end-1))' interp1(cds.kin.t(idx),cds.kin.y(idx),t_bins(1:end-1))'];
-                trial_data(i).vel = [interp1(cds.kin.t(idx),cds.kin.vx(idx),t_bins(1:end-1))' interp1(cds.kin.t(idx),cds.kin.vy(idx),t_bins(1:end-1))'];
-                trial_data(i).acc = [interp1(cds.kin.t(idx),cds.kin.ax(idx),t_bins(1:end-1))' interp1(cds.kin.t(idx),cds.kin.ay(idx),t_bins(1:end-1))'];
-                if ~isempty(cds.force)
-                    trial_data(i).force = [interp1(cds.kin.t(idx),cds.force.fx(idx),t_bins(1:end-1))' interp1(cds.kin.t(idx),cds.force.fy(idx),t_bins(1:end-1))'];
-                else
-                    trial_data(i).force = [];
-                end
-            case 'decimate' % this is for legacy for now
-                t_dec = decimate(cds.kin.t(idx),round(binSize/dt_kin));
-                trial_data(i).pos = [decimate(cds.kin.x(idx),round(binSize/dt_kin)) decimate(cds.kin.y(idx),round(binSize/dt_kin))];
-                trial_data(i).vel = [decimate(cds.kin.vx(idx),round(binSize/dt_kin)) decimate(cds.kin.vy(idx),round(binSize/dt_kin))];
-                trial_data(i).acc = [decimate(cds.kin.ax(idx),round(binSize/dt_kin)) decimate(cds.kin.ay(idx),round(binSize/dt_kin))];
-                % redefine time bins for binned spikes
-                t_bins = [t_dec', t_dec(end)+binSize];
-                
-                if ~isempty(cds.force)
-                    trial_data(i).force = [decimate(cds.force.fx(idx),round(binSize/dt_force)) decimate(cds.force.fy(idx),round(binSize/dt_force))];
-                else
-                    trial_data(i).force = [];
-                end
+        
+        t_dec = decimate(cds.kin.t(idx),round(binSize/dt_kin));
+        trial_data(i).pos = [decimate(cds.kin.x(idx),round(binSize/dt_kin)) decimate(cds.kin.y(idx),round(binSize/dt_kin))];
+        trial_data(i).vel = [decimate(cds.kin.vx(idx),round(binSize/dt_kin)) decimate(cds.kin.vy(idx),round(binSize/dt_kin))];
+        trial_data(i).acc = [decimate(cds.kin.ax(idx),round(binSize/dt_kin)) decimate(cds.kin.ay(idx),round(binSize/dt_kin))];
+        % redefine time bins for binned spikes
+        t_bins = [t_dec', t_dec(end)+binSize];
+        
+        if ~isempty(cds.force)
+            trial_data(i).force = [decimate(cds.force.fx(idx),round(binSize/dt_force)) decimate(cds.force.fy(idx),round(binSize/dt_force))];
+        else
+            trial_data(i).force = [];
         end
         
         % put trial markers (target on etc) in bins for each spikes

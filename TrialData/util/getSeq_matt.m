@@ -1,4 +1,4 @@
-function seq = getSeq_limblab(dat, binWidth, varargin)
+function seq = getSeq_matt(dat, binWidth, varargin)
 %
 % seq = getSeq(dat, binWidth, ...)  
 %
