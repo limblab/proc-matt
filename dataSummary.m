@@ -1,33 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% define the root directory for this database
-% defines root directories for all my computers
-[~,hostname]= system('hostname');
-
-switch hostname
-    case 'FSMC17SW0D9GTF1' % my 2016 Macbook Pro
-        rootDir = '';
-    case 'FSM6YVJWR1' % my lab desktop
-        
-    otherwise
-        error('Computer not recognized. Could not pull root directory.')
-end
-
-cerebusDataDir = 'CerebusData';
-CDSDir = 'CDS';
-TDDir = 'TrialDataFiles';
-resultsDir = 'results';
+% This script summarizes all of my sessions of data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+defineDirs;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~exist(fullfile(rootDir,'filedb.mat'),'file') % initialize file database
     filedb = filedb_add();
-    save(fullfile(rootDir,'filedb.mat'),'filedb');
 else % load the file database
     load(fullfile(rootDir,'filedb.mat'));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % specify which arrays each monkey had
@@ -318,6 +299,10 @@ sessionList = { ...
 % RECONSIDER ANALYZING
 %   'Mihili','2014-01-17','VR','RT'; ... % Poor work ethic in washout, so it's really long... might be useable if needed
 %   'Mihili','2015-06-12','FF','CO'; ...    %25 S(M-P) ? - SHORT WASHOUT, and a fairly garbage session because he didn't complete reaches to a target
+
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

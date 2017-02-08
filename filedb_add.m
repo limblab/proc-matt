@@ -41,14 +41,20 @@ function filedb = filedb_add(filedb,cds_path)
 % 'Incomplete': array with incomplete count for each file
 % 'Epochs': cell array with names of epoch for each file
 % 'Duration': array with length of each file
-dataSummary;
+defineDirs;
 %%%%%%%%%%%
 % Some hard coded parameters
 params.rootDir = rootDir;
+
+if ~exist(fullfile(rootDir,'filedb.mat'),'file')
+    filedb = table();
+    save(fullfile(rootDir,'filedb.mat'),'filedb');
+end
+
+dataSummary;
 params.cerebusDataDir = cerebusDataDir;
 params.array_list = array_list;
 params.exclude_units = [0 255];
-
 if nargin < 1 % load session list from data summary and process
     disp('Initializing filedb...');
     
@@ -61,7 +67,6 @@ if nargin < 1 % load session list from data summary and process
     filedb.Properties.UserData = rootDir;
     
 elseif nargin == 1 % check against dataSummary.m for missing sessions and append them
-    
     % check all monkeys and days
     idx = find(~(ismember(sessionList(:,1),filedb.Monkey) & ismember(sessionList(:,2),filedb.Date)));
     if ~isempty(idx) % session isn't added yet
