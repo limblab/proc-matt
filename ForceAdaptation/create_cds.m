@@ -76,7 +76,7 @@ for iS = 1:size(sessions,1)
     arrays = array_list{strcmpi(array_list(:,1),monkey) & cellfun(@(x) datenum(date) < datenum(x), array_list(:,2)),3};
     arrayMaps = array_list{strcmpi(array_list(:,1),monkey) & cellfun(@(x) datenum(date) < datenum(x), array_list(:,2)),4};
     
-    if makeTD,
+    if makeTD
         trial_data = [];
         meta.perturbation = pert;
         switch lower(filedb.Direction{s_idx})

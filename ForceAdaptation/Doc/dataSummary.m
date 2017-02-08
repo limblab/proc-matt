@@ -1,6 +1,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % define the root directory for this database
-define_root_dir;
+% defines root directories for all my computers
+[~,hostname]= system('hostname');
+
+switch hostname
+    case 'FSMC17SW0D9GTF1' % my 2016 Macbook Pro
+        rootDir = '';
+    case 'FSM6YVJWR1' % my lab desktop
+        
+    otherwise
+        error('Computer not recognized. Could not pull root directory.')
+end
+
 cerebusDataDir = 'CerebusData';
 CDSDir = 'CDS';
 TDDir = 'TrialDataFiles';
