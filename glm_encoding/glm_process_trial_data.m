@@ -90,6 +90,7 @@ if do_rcb
     end
     rcb_which_vars = [rcb_which_vars, kin_signals];
     params.rcb_which_vars = rcb_which_vars;
+    params.rcb_n = params.unit_lags;
     tic;
     trial_data = convBasisFunc(trial_data,rcb_which_vars,params);
     toc;
