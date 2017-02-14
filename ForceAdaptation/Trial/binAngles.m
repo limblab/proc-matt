@@ -1,6 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function theta = binAngles(theta,angleBinSize)
+%
+%   Bins angles into equal incremewnts of angleBinSize.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function theta = binAngles(theta,angleBinSize)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+theta = minusPi2Pi(theta);
 theta = round(theta./angleBinSize).*angleBinSize;
+
+% Now do some checks to make sure the values make sense
 % -pi and pi are the same thing
 if length(unique(theta)) > int16(2*pi/angleBinSize)
     % probably true that -pi and pi both exist
