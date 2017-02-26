@@ -44,11 +44,11 @@ function filedb = filedb_add(filedb,cds_path)
 defineDirs;
 %%%%%%%%%%%
 % Some hard coded parameters
-params.rootDir = rootDir;
+params.dbDir = dbDir;
 
-if ~exist(fullfile(rootDir,'filedb.mat'),'file')
+if ~exist(fullfile(dbDir,'filedb.mat'),'file')
     filedb = table();
-    save(fullfile(rootDir,'filedb.mat'),'filedb');
+    save(fullfile(dbDir,'filedb.mat'),'filedb');
 end
 
 dataSummary;
@@ -64,7 +64,7 @@ if nargin < 1 % load session list from data summary and process
     end
     
     % add root directory to use later
-    filedb.Properties.UserData = rootDir;
+    filedb.Properties.UserData = dbDir;
     
 elseif nargin == 1 % check against dataSummary.m for missing sessions and append them
     % check all monkeys and days
@@ -135,7 +135,7 @@ else
 end
 
 disp('Saving...')
-save(fullfile(rootDir,'filedb.mat'),'filedb');
+save(fullfile(dbDir,'filedb.mat'),'filedb');
 disp('Done.');
 
 end
@@ -146,7 +146,7 @@ end
 % add a row to the database table
 function filedb = append_entry(filedb,s,params)
 
-rootDir = params.rootDir;
+dbDir = params.dbDir;
 cerebusDataDir = params.cerebusDataDir;
 array_list = params.array_list;
 
@@ -174,7 +174,7 @@ switch lower(s{3})
 end
 
 % get filenames for all associated files
-d = dir(fullfile(rootDir,s{1},cerebusDataDir,s{2}));
+d = dir(fullfile(dbDir,s{1},cerebusDataDir,s{2}));
 d=d(~[d.isdir]);
 fn = {d(~[d.isdir]).name};
 % get end of filenames (we want '001', '002', etc)

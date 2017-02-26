@@ -3,68 +3,104 @@ clear;
 close all;
 clc;
 
-load('/Users/mattperich/Data/TrialDataFiles/Chewie_CO_FF_2016-10-07.mat');
-
-[~,td1] = getTDidx(trial_data,'epoch','BL');
-[~,td2] = getTDidx(trial_data,'epoch','AD','range',[0.66 1]);
-td = [td1,td2];
-
-td = truncateAndBin(td,1);
-td = removeBadNeurons(td,struct('min_fr',5));
-td = pruneBadTrials(td,struct('ranges', ...
-    {{'idx_go_cue','idx_movement_on',[5,50]}}));
-
-td = smoothSpikes(td,struct('sqrt_transform',true,'do_smoothing',true,'kernel_SD',0.1));
-td = truncateAndBin(td,{'idx_movement_on',-50},{'idx_movement_on',40});
-% td = truncateAndBin(td,{'idx_go_cue',0},{'idx_trial_end',-20});
-td = trialAverage(td,{'target_direction','epoch'});
-
-% td = softNormalize(td);
-
+load('/Users/mattperich/Data/TrialDataFiles/old/Chewie_CO_FF_2016-10-07.mat');
+[~,trial_data] = getTDidx(trial_data,'result','R');
+for i = 1:length(trial_data),trial_data(i).bin_size = 0.01; end
 
 %%
-% get subspaces
-num_dims = 3;
+
+[~,td] = getTDidx(trial_data,'epoch',{'BL','AD','WO'});
+
+td = removeBadNeurons(td,struct('min_fr',5));
+td = removeBadTrials(td,struct('ranges', ...
+    {{'idx_go_cue','idx_movement_on',[5,50]}}));
+
+td = smoothSignals(td,struct('signals',{getTDfields(td,'spikes')},'sqrt_transform',true,'do_smoothing',true,'kernel_SD',0.1));
+td = truncateAndBin(td,{'idx_movement_on',-20},{'idx_movement_on',40});
+td = softNormalize(td);
+
+td = getSpeed(td);
+kin_rcb_params = struct( ...
+    'which_vars', {{'vel','speed'}}, ...
+    'rcb_n',      3, ...
+    'rcb_hpeaks', [0.01,0.2], ...
+    'rcb_b',      0.2, ...
+    'flip_time',  true);
+td = convBasisFunc(td,kin_rcb_params);
+
+td1 = subtractConditionMean(td(getTDidx(td,'epoch','BL')));
+td2 = subtractConditionMean(td(getTDidx(td,'epoch','AD')));
+td3 = subtractConditionMean(td(getTDidx(td,'epoch','WO')));
+td = [td1,td2,td3];
+
+%%
+num_dims = 5;
 pca_params = struct( ...
-    'in_array','PMd', ...
-    'out_array','M1', ...
+    'in_signals','PMd_spikes', ...
+    'out_signals','M1_spikes', ...
     'in_dims',2*num_dims, ...
     'out_dims',num_dims, ...
     'do_smoothing',false, ...
     'sqrt_transform',false, ...
+    'trial_avg_cond',{{'target_direction','epoch'}}, ...
     'do_plot',false);
-
 [td,temp] = getPotentSpace(td,pca_params);
-td = getPCA(td,temp.w_out,temp.mu_out,struct('arrays','M1','do_smoothing',false,'sqrt_transform',false));
+
+pca_rcb_params = struct( ...
+    'which_vars', {{'PMd_pca','PMdM1_potent','PMdM1_null'}}, ...
+    'rcb_n',      5, ...
+    'rcb_hpeaks', [0.01,0.2], ...
+    'rcb_b',      0.5, ...
+    'flip_time',  false);
+td = convBasisFunc(td,pca_rcb_params);
 
 %%
 close all;
 clc;
 figure; hold all;
 
-dims = 1:10;%size(td(1).M1_spikes,2);
-which_out = 'M1_pca';
+train_trials = getTDidx(td,'epoch','BL','range',[0 0.9]);
+test_trials  = getTDidx(td,'epoch','BL','range',[0.9 1]);
 
-which_one = 'PMd_pca';
-[~,~,c_bl,b_bl] = linPredSignal(td(getTDidx(td,'epoch','BL')),which_one,which_out,num_dims);
-[~,~,c_ad] = linPredSignal(td(getTDidx(td,'epoch','AD')),which_one,which_out,num_dims,b_bl);
-subplot(131); hold all;
-plot(c_bl(dims),'LineWidth',2)
-plot(c_ad(dims),'LineWidth',2)
-set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[0,1]);
+dims = 1:num_dims;%size(td(1).M1_spikes,2);
+which_out = {'M1_pca',dims};
 
-which_one = 'potent';
-[~,~,c_bl,b_bl] = linPredSignal(td(getTDidx(td,'epoch','BL')),which_one,which_out,num_dims);
-[~,~,c_ad] = linPredSignal(td(getTDidx(td,'epoch','AD')),which_one,which_out,num_dims,b_bl);
-subplot(132); hold all;
-plot(c_bl(dims),'LineWidth',2)
-plot(c_ad(dims),'LineWidth',2)
-set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[0,1]);
+which_in = {'vel','all';'vel_rcb','all';'speed','all';'speed_rcb','all'};
+            
+[td,model_info] = getModel(td,struct( ...
+    'in_signals',  {which_in}, ...
+    'out_signals', {which_out}, ...
+    'model_type',  'linmodel', ...
+    'model_name',  which_in{1}, ...
+    'train_idx',   train_trials));
 
-which_one = 'null';
-[~,~,c_bl,b_bl] = linPredSignal(td(getTDidx(td,'epoch','BL')),which_one,which_out,num_dims);
-[~,~,c_ad] = linPredSignal(td(getTDidx(td,'epoch','AD')),which_one,which_out,num_dims,b_bl);
-subplot(133); hold all;
-plot(c_bl(dims),'LineWidth',2)
-plot(c_ad(dims),'LineWidth',2)
-set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[0,1]);
+
+%%%%%%%%%%
+pred_bins = 0:0.05:0.5;
+all_vaf = zeros(dims(end),2*length(pred_bins)-1);
+
+vaf_bl = evalModel(td(test_trials),struct( ...
+    'eval_metric','vaf', ...
+    'model_type','linmodel', ...
+    'out_signals', {which_out}, ...
+    'model_name', which_in{1}));
+all_vaf(:,1) = mean(vaf_bl,2);
+
+for i = 1:length(pred_bins)-1
+    vaf = evalModel(td(getTDidx(td,'epoch','AD','range',pred_bins(i:i+1))),struct( ...
+        'eval_metric','vaf', ...
+        'model_type','linmodel', ...
+        'out_signals', {which_out}, ...
+        'model_name', which_in{1}));
+    all_vaf(:,i+1) = mean(vaf,2);
+end
+for i = 1:length(pred_bins)-1
+    vaf = evalModel(td(getTDidx(td,'epoch','WO','range',pred_bins(i:i+1))),struct( ...
+        'eval_metric','vaf', ...
+        'model_type','linmodel', ...
+        'out_signals', {which_out}, ...
+        'model_name', which_in{1}));
+    all_vaf(:,i+length(pred_bins)) = mean(vaf,2);
+end
+    
+plot(mean(all_vaf,1),'LineWidth',3);

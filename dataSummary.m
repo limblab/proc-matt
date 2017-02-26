@@ -3,10 +3,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 defineDirs;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~exist(fullfile(rootDir,'filedb.mat'),'file') % initialize file database
+if ~exist(fullfile(dbDir,'filedb.mat'),'file') % initialize file database
+    disp('FileDB not found. Making a new one.');
     filedb = filedb_add();
 else % load the file database
-    load(fullfile(rootDir,'filedb.mat'));
+    disp('Loading FileDB.');
+    load(fullfile(dbDir,'filedb.mat'));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -234,8 +236,7 @@ sessionList = { ...
     'Chewie','2016-10-21','CS','CO','',NaN,NaN, ...
         {'CO and RT day'}; ... %27
     'Chewie','2016-10-21','CS','RT','',NaN,NaN, ...
-        {'CO and RT day'}; ... %27
-    
+        {'CO and RT day'}; ... %28
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Mihili
     'Mihili','2014-01-14','VR','RT','CCW',0.52,NaN, ...
@@ -270,8 +271,8 @@ sessionList = { ...
         {}; ...    %17 S(M+P) ?
     'Mihili','2014-09-29','CS','CO','',NaN,NaN, ...
         {}; ...    %18 S(M+P) ?
-%     'Mihili','2014-12-03','CS','CO','',NaN,NaN, ...
-%         {}; ...    %19 S(M)   ?
+    'Mihili','2014-12-03','CS','CO','',NaN,NaN, ...
+        {}; ...    %19 S(M)   ?
     'Mihili','2015-05-11','CS','CO','',NaN,NaN, ...
         {}; ...    %21 S(M+P) ?
     'Mihili','2015-05-12','CS','CO','',NaN,NaN, ...
