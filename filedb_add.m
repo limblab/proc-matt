@@ -57,6 +57,7 @@ params.array_list = array_list;
 params.exclude_units = [0 255];
 if nargin < 1 % load session list from data summary and process
     disp('Initializing filedb...');
+    did_something = true;
     
     filedb = table();
     for iFile = 1:size(sessionList,1)
@@ -70,15 +71,19 @@ elseif nargin == 1 % check against dataSummary.m for missing sessions and append
     % check all monkeys and days
     idx = find(~(ismember(sessionList(:,1),filedb.Monkey) & ismember(sessionList(:,2),filedb.Date)));
     if ~isempty(idx) % session isn't added yet
+        did_something = true;
         disp(['Appending ' num2str(length(idx)) ' missing sessions...']);
         for s_idx = idx'
             filedb = append_entry(filedb,sessionList(s_idx,:),params);
         end
     else
+        did_something = false;
         disp('No missing sessions.');
     end
     
 elseif nargin == 2 % add data from CDS
+    did_something = true;
+    
     d = dir(cds_path);
     filenames = {d(~[d.isdir]).name};
     
@@ -86,6 +91,7 @@ elseif nargin == 2 % add data from CDS
     filenames = filenames(cellfun(@(x) str2double(x(end-6:end-4)),filenames));
     
     [durations,rewards,aborts,failures,incompletes] = deal(zeros(1,length(filenames)));
+    epochs = cell(1,length(filenames));
     for iFile = 1:length(filenames)
         % load CDS
         load(fullfile(cds_path,filenames{iFile}),'cds');
@@ -116,6 +122,8 @@ elseif nargin == 2 % add data from CDS
             end
         end
         
+        epochs{iFile} = filenames{iFile}(end-18:end-17);
+        
         durations(iFile) = cds.meta.duration;
         rewards(iFile) = cds.meta.numReward;
         aborts(iFile) = cds.meta.numAbort;
@@ -124,6 +132,8 @@ elseif nargin == 2 % add data from CDS
     end
     
     % now add to filedb
+    filedb.FileNames{s_idx} = filenames;
+    filedb.Epochs{s_idx} = epochs;
     filedb.Duration{s_idx} = durations;
     filedb.Units{s_idx} = units;
     filedb.Reward{s_idx} = rewards;
@@ -134,9 +144,11 @@ else
     error('Too many inputs.');
 end
 
-disp('Saving...')
-save(fullfile(dbDir,'filedb.mat'),'filedb');
-disp('Done.');
+if did_something
+    disp('Saving...')
+    save(fullfile(dbDir,'filedb.mat'),'filedb');
+    disp('Done.');
+end
 
 end
 

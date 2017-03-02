@@ -1,3 +1,7 @@
+% TO DO:
+%   1) Predicting in blocks for pR2
+%   2) plotting code
+%   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Function to run GLM encoding model
 clear;
@@ -10,10 +14,12 @@ badtrial_params = struct( ...
     'ranges', {{'idx_go_cue','idx_movement_on',[5 50]}});
 idx_start = {'idx_target_on', 0};
 idx_end   = {'idx_trial_end', 0};
+train_info = {'BL',[0 0.9]};
+test_info = {'BL',[0.9 1]};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Kinematics parameters
 kin_rcb_params = struct( ...
-    'which_vars', {{'pos','vel'}}, ...
+    'which_vars', {{'pos','vel','speed'}}, ...
     'rcb_n',      3, ...
     'rcb_hpeaks', [0.01,0.2], ...
     'rcb_b',      0.2, ...
@@ -30,7 +36,13 @@ spike_rcb_params = struct( ...
     'rcb_b',      0.1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Covariates parameters
-cov_in.basic = {'pos','all';'vel','all';'pos_rcb','all';'vel_rcb','all'};
+cov_in.basic = { ...
+    'pos','all'; ...
+    'vel','all'; ...
+    'speed','all'; ...
+    'pos_rcb','all'; ...
+    'vel_rcb','all'; ...
+    'speed_rcb','all'};
 cov_in.full  = cat(1,{[in_array '_spikes'],'all'},cov_in.basic);
 
 
@@ -40,12 +52,12 @@ cov_in.full  = cat(1,{[in_array '_spikes'],'all'},cov_in.basic);
 % Load data
 % load('/Users/mattperich/Data/han_td.mat','trial_data');
 load('/Users/mattperich/Data/TrialDataFiles/old/Chewie_CO_FF_2016-10-07.mat')
-[~,trial_data] = getTDidx(trial_data,'result','R');
-for i = 1:length(trial_data),trial_data(i).bin_size = 0.01; end
+[~,td] = getTDidx(trial_data,'result','R');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Remove bad trials
-td = removeBadTrials(trial_data,badtrial_params);
+td = removeBadTrials(td,badtrial_params);
+td = getSpeed(td);
 % Process kinematics with RCB convolution
 td = convBasisFunc(td,kin_rcb_params);
 % Process spikes with RCB convolution to get history
@@ -55,8 +67,8 @@ td = truncateAndBin(td,idx_start,idx_end);
 % remove low-firing cells
 td = removeBadNeurons(td,struct('min_fr',min_fr,'do_shunt_check',true));
 
-train_trials = getTDidx(td,'epoch','BL','range',[0 0.9]);
-test_trials = getTDidx(td,'epoch','BL','range',[0.9 1]);
+train_trials = getTDidx(td,'epoch',train_info{1},'range',train_info{2});
+test_trials = getTDidx(td,'epoch',test_info{1},'range',test_info{2});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ESTIMATE DIMENSIONALITY
@@ -74,7 +86,8 @@ potentNull_params = struct( ...
     'out_signals',[out_array '_spikes'], ...
     'in_dims',in_dims, ...
     'out_dims',out_dims, ...
-    'use_trials',getTDidx(td,'epoch',{'BL'}));
+    'use_trials',getTDidx(td,'epoch',{'BL'}), ...
+    'do_smoothing',true);
 [td,potentNull_info] = getPotentSpace(td,potentNull_params);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
