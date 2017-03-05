@@ -12,7 +12,7 @@ dataSummary;
 % what to do
 remakeCDS = false; % if false, will skip CDS generating if file exists
 remakeTD = true; % make trial data format that groups epochs
-remakeFileDB = true; % add CDS info to fileDB
+remakeFileDB = false; % add CDS info to fileDB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 filedb = filedb_add(filedb);
@@ -21,10 +21,11 @@ filedb = filedb_add(filedb);
 % which session
 % which_sessions = strcmpi(filedb.Monkey,'Mihili') & ...
 %     strcmpi(filedb.Task,'CO') & ...
-%     ismember(filedb.Perturbation,{'VR'});
-which_sessions = strcmpi(filedb.Task,'RT') & ...
-    ismember(filedb.Perturbation,{'FF','VR'});
-%                  datenum(filedb.Date) == datenum('2016-10-21');
+    ismember(filedb.Perturbation,{'VR'});
+which_sessions = ismember(filedb.Task,{'CO'}) & ...
+strcmpi(filedb.Monkey,'Chewie') & ...
+    ismember(filedb.Perturbation,{'FF'}) & ...
+                 datenum(filedb.Date) == datenum('2016-10-07');
 % Chewie: 2013-12-04, 2013-12-19, 2015-07-07, 2015-07-09 had CDS bugs
 % Chewie '2015-07-08' didn't have a washout in trial_table
 sessions = [filedb.Monkey(which_sessions), filedb.Date(which_sessions), filedb.Task(which_sessions)];
@@ -67,7 +68,8 @@ tdInputArgs = struct( ...
     'trial_results',{trial_results}, ... % which to include
     'exclude_units',[0,255], ... % sort codes to exclude
     'bin_size',0.01, ... % binning size in s
-    'extra_time',[0.1 0.1]); % time before targ pres and after end in s
+    'extra_time',[0.1 0.1], ... % time before targ pres and after end in s
+    'all_points',true);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -77,7 +79,7 @@ tdInputArgs = struct( ...
 % build CDS and trial data
 
 % if multiple dates are provided, loop along them
-for iS = 19:size(sessions,1)
+for iS = 1:size(sessions,1)
     disp(['Session ' num2str(iS) ' of ' num2str(size(sessions,1))]);
     monkey = sessions{iS,1};
     date = sessions{iS,2};
@@ -98,7 +100,10 @@ for iS = 19:size(sessions,1)
     % Find all of the .mat files
     d = dir(fullfile(rootDir,monkey,cerebusDataDir,date,'*.mat'));
     d = {d.name};
-    d = d(cellfun(@(x) isempty(regexp(x,'-s.mat', 'once')) & isempty(regexp(x,'-metatags.mat', 'once')) & isempty(regexp(x,'PMd', 'once')),d));
+    d = d(cellfun(@(x) isempty(regexp(x,'-s.mat', 'once')) & ...
+        isempty(regexp(x,'-metatags.mat', 'once')) & ...
+        isempty(regexp(x,'_PMd_', 'once')) & ...
+        ~isempty(regexp(x,['_' task '_'], 'once')),d));
     
     if ~isempty(d)
         % name format will be MONKEY_ARRAY_TASK_PERT_EPOCH_DATE_NUM.mat

@@ -4,7 +4,7 @@ clear; close all; clc;
 dataSummary;
 
 tasks = {'CO'};
-perts = {'FF','VR'};
+perts = {'FF','VR','CS'};
 
 array = 'M1';
 
@@ -15,6 +15,7 @@ session_idx = find( ...
     ~ismember(filedb.Monkey,'MrT') & ...
     cellfun(@(x) any(ismember(x,array)),filedb.Arrays));
 
+
 M1_dims = zeros(1,length(session_idx));
 for i = 1:length(session_idx)
     file = session_idx(i);
@@ -22,8 +23,10 @@ for i = 1:length(session_idx)
     
     fname = [filedb.Monkey{file} '_' filedb.Task{file} '_' filedb.Perturbation{file} '_' filedb.Date{file} '.mat'];
     load(fullfile(rootDir,TDDir,fname),'trial_data');
-    td = getMoveOnsetAndPeak(trial_data);
-    
+    if strcmpi(filedb.Task{file},'rt')
+        trial_data = getRWMovements(trial_data);
+    end
+
     [~,td] = getTDidx(td,'result','R','epoch','BL');
     td = removeBadNeurons(td,struct('min_fr',1));
     td = removeBadTrials(td,struct('ranges', ...
@@ -49,11 +52,11 @@ end
 %%
 array = 'PMd';
 
-session_idx = find( ...
-    ismember(filedb.Task,tasks) & ...
-    ismember(filedb.Perturbation,perts) & ...
-    ~cellfun(@isempty,filedb.FileNames) & ...
-    cellfun(@(x) any(ismember(x,array)),filedb.Arrays));
+% session_idx = find( ...
+%     ismember(filedb.Task,tasks) & ...
+%     ismember(filedb.Perturbation,perts) & ...
+%     ~cellfun(@isempty,filedb.FileNames) & ...
+%     cellfun(@(x) any(ismember(x,array)),filedb.Arrays));
 
 PMd_dims = zeros(1,length(session_idx));
 for i = 1:length(session_idx)
@@ -88,7 +91,19 @@ end
 
 %%
 figure;
-subplot(121);
+subplot(211);
 hist(M1_dims,1:max([M1_dims,PMd_dims]));
-subplot(122);
-hist(PMd_dims,1:max([M1_dims,PMd_dims]));
+axis('tight');
+set(gca,'Box','off','TickDir','out','FontSize',14);
+ylabel('Counts','FontSize',14);
+title(['M1 (N = ' num2str(length(M1_dims)) ')'],'FontSize',16);
+
+subplot(212);
+hist(PMd_dims(1:end),1:max([M1_dims,PMd_dims]));
+axis('tight');
+set(gca,'Box','off','TickDir','out','FontSize',14);
+ylabel('Counts','FontSize',14);
+xlabel('Dimensionality','FontSize',14);
+title(['PMd (N = ' num2str(length(PMd_dims)) ')'],'FontSize',16);
+
+
