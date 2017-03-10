@@ -11,10 +11,9 @@ max_vel = 50;
 % 'F',70: fail (fails trial post-go-cue, e.g. doesn't make it to the target in time)
 % 'I',74: incomplete (fails trial after entering outer target, e.g. doesn't hold)
 tdInputArgs = struct( ...
-    'trialResults',{{'R','F','I'}}, ... % which to include
-    'excludeUnits',[255], ... % sort codes to exclude
-    'binSize',0.01, ... % binning size in s
-    'extraTime',[0.1 0.01]); % time before targ pres and after end in s
+    'trial_results',{{'R','F','I'}}, ... % which to include
+    'exclude_units',[255], ... % sort codes to exclude
+    'all_points',true); % time before targ pres and after end in s
 
 meta.angle_dir = 'CCW';
 meta.rotation_angle = -1;
@@ -44,7 +43,7 @@ for e = 1:4
     end
     meta.epoch = epoch_names{e,2};
     tdInputArgs.meta = meta;
-    td = parseFileByTrial_cds(cds,tdInputArgs);
+    td = parseFileByTrial(cds,tdInputArgs);
     trial_data = [trial_data, td];
     clear cds;
 end

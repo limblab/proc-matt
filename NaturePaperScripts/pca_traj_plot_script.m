@@ -16,7 +16,7 @@ td = removeBadTrials(td,struct('ranges', ...
     {{'idx_go_cue','idx_movement_on',[5,50]}}));
 
 td = smoothSignals(td,struct('signals',{getTDfields(td,'spikes')},'sqrt_transform',true,'do_smoothing',true,'kernel_SD',0.1));
-td = truncateAndBin(td,{'idx_movement_on',-20},{'idx_movement_on',40});
+td = trimTD(td,{'idx_movement_on',-20},{'idx_movement_on',40});
 td = softNormalize(td);
 
 td = getSpeed(td);

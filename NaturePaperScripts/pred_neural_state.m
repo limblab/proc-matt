@@ -43,9 +43,9 @@ for iFile = 1:length(session_idx)
     % ESTIMATE DIMENSIONALITY
     if isempty([in_dims,out_dims])
         td_temp = appendTDs( ...
-            truncateAndBin(td,{'idx_target_on',0},{'idx_target_on',50}), ...
-            truncateAndBin(td,{'idx_go_cue',0},{'idx_go_cue',50}));
-        %         td_temp = truncateAndBin(td,{'idx_go_cue',0},{'idx_go_cue',50});
+            trimTD(td,{'idx_target_on',0},{'idx_target_on',50}), ...
+            trimTD(td,{'idx_go_cue',0},{'idx_go_cue',50}));
+        %         td_temp = trimTD(td,{'idx_go_cue',0},{'idx_go_cue',50});
         td_temp = sqrtTransform(td_temp);
         td_temp = smoothSignals(td_temp,struct('signals',{getTDfields(td_temp,'spikes')}));
         % td_temp = softNormalize(td_temp);
@@ -58,8 +58,9 @@ for iFile = 1:length(session_idx)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % smooth and such
     td = smoothSignals(td,struct('signals',{getTDfields(td,'spikes')},'kernel_SD',0.1,'sqrt_transform',true));
-    % td = truncateAndBin(td,{'idx_target_on',0},{'idx_trial_end',0});
-    td = truncateAndBin(td,num_bins,{'idx_go_cue',-50},{'idx_go_cue',60});
+    % td = trimTD(td,{'idx_target_on',0},{'idx_trial_end',0});
+    td = trimTD(td,{'idx_go_cue',-50},{'idx_go_cue',60});
+    td = binTD(td,num_bins);
     
     pca_params = struct( ...
         'in_signals','PMd_spikes', ...

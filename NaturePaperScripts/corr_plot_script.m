@@ -10,7 +10,7 @@ load(filename);
 trial_data = truncateAndBin(trial_data,{'idx_target_on',0},{'idx_trial_end',0});
 [~,trial_data] = getTDidx(trial_data,'result','R');
 [~,td1] = getTDidx(trial_data,'epoch','BL');
-[~,td2] = getTDidx(trial_data,'epoch','AD','range',[0.66 1]);
+[~,td2] = getTDidx(trial_data,'epoch','AD','range',[0.33 1]);
 td = [td1, td2];
 
 td = smoothSignals(td,struct('signals',{getTDfields(td,'spikes')},'sqrt_transform',true,'calc_fr',true));
@@ -67,7 +67,7 @@ axis('square'); set(gca,'Box','off','TickDir','out','FontSize',14,'YTick',[],'XT
 
 %%%%%%%% MOVEMENT
 
-td = truncateAndBin(td_s,{'idx_movement_on',-10},{'idx_movement_on',50});
+td = truncateAndBin(td_s,{'idx_go_cue',-10},{'idx_go_cue',40});
 td = removeBadNeurons(td,struct('min_fr',5));
 td = softNormalize(td);
 td = trialAverage(td,{'target_direction','epoch'});
@@ -78,12 +78,12 @@ td = trialAverage(td,{'target_direction','epoch'});
 
 arrays = {'M1_spikes'};
 params_corr = struct('signals',{arrays},'cluster_order',true,'do_norm',true,'cluster_arrays',true);
-[~,m1_bl_sort] = pairwiseCorr(td0,params_corr);
+% [~,m1_bl_sort] = pairwiseCorr(td0,params_corr);
 [m1_bl,m1_bl_sort] = pairwiseCorr(td1,params_corr);
 [m1_ad,m1_ad_sort] = pairwiseCorr(td2,params_corr);
 arrays = {'PMd_spikes'};
 params_corr = struct('signals',{arrays},'cluster_order',true,'do_norm',true,'cluster_arrays',true);
-[~,pmd_bl_sort] = pairwiseCorr(td0,params_corr);
+% [~,pmd_bl_sort] = pairwiseCorr(td0,params_corr);
 [pmd_bl,pmd_bl_sort] = pairwiseCorr(td1,params_corr);
 [pmd_ad,pmd_ad_sort] = pairwiseCorr(td2,params_corr);
 
