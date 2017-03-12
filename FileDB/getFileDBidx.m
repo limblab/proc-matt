@@ -20,13 +20,13 @@ idx = ones(size(filedb,1),1);
 
 % Check for the trials that match each criterion
 for i = 1:length(fn)
-        if ischar(fv{i})
-            idx = idx & strcmpi(filedb.(fn{i}),fv{i});
-        elseif iscell(fv{i})
-            idx = idx & ismember(filedb.(fn{i}),fv{i});
-        else
-            idx = idx & ismember(filedb.(fn{i}),fv{i});
-        end
+    if ischar(fv{i})
+        idx = idx & strcmpi(filedb.(fn{i}),fv{i});
+    elseif iscell(fv{i})
+        idx = idx & ismember(filedb.(fn{i}),fv{i});
+    else
+        idx = idx & ismember(filedb.(fn{i}),fv{i});
+    end
 end
 
 %%% PROCESS THINGS TO EXCLUDE
@@ -34,9 +34,11 @@ if rem_empty_fn
     idx = idx & ~cellfun(@isempty,filedb.FileNames);
 end
 
-% this whole thingsis kinda hacky, but it makes the code very flexible
-for i = 1:length(exclusions)
-    idx = idx & eval(exclusions{i});
+% this whole thing is kinda hacky, but it makes the code very flexible
+if nargin > 2
+    for i = 1:length(exclusions)
+        idx = idx & eval(exclusions{i});
+    end
 end
 
 idx = find(idx);

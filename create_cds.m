@@ -11,7 +11,7 @@ dataSummary;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % what to do
 remakeCDS = false; % if false, will skip CDS generating if file exists
-remakeTD = true; % make trial data format that groups epochs
+remakeTD = false; % make trial data format that groups epochs
 remakeFileDB = false; % add CDS info to fileDB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -19,15 +19,10 @@ filedb = filedb_add(filedb);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % which session
-% which_sessions = strcmpi(filedb.Monkey,'Mihili') & ...
-%     strcmpi(filedb.Task,'CO') & ...
-    ismember(filedb.Perturbation,{'VR'});
-which_sessions = ismember(filedb.Task,{'CO'}) & ...
-strcmpi(filedb.Monkey,'Chewie') & ...
-    ismember(filedb.Perturbation,{'FF'}) & ...
-                 datenum(filedb.Date) == datenum('2016-10-07');
-% Chewie: 2013-12-04, 2013-12-19, 2015-07-07, 2015-07-09 had CDS bugs
-% Chewie '2015-07-08' didn't have a washout in trial_table
+which_sessions = getFileDBidx(filedb, ...
+    {'Task',{'CO'}});%,'Perturbation',{'FF'},'Monkey',{'Chewie','Mihili'}}, ...
+%     {'~(ismember(filedb.Monkey,''Mihili'') & datenum(filedb.Date) > datenum(''2015-01-01''))', ...
+%     'cellfun(@(x) all(ismember({''M1'',''PMd''},x)),filedb.Arrays)'});
 sessions = [filedb.Monkey(which_sessions), filedb.Date(which_sessions), filedb.Task(which_sessions)];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -47,7 +42,6 @@ sessions = [filedb.Monkey(which_sessions), filedb.Date(which_sessions), filedb.T
 %     .exclude_units : ID for which units to exclude (Default: [0,255])
 %                       NOTE: this default gets rid of unsorted!
 %     .trial_results : which reward codes to use ('R','A','F','I') (Default: {'R'})
-%     .bin_size      : default 0.01 sec
 %     .extra_time    : [time before, time after] beginning and end of trial (default [0.2 0.2] sec)
 %     .all_points    : flag to include all data points. Thus, disregards extra_time
 %                       and each trial ends at trial_start of the one after
@@ -67,9 +61,8 @@ tdInputArgs = struct( ...
     'event_list',{event_list}, ...
     'trial_results',{trial_results}, ... % which to include
     'exclude_units',[0,255], ... % sort codes to exclude
-    'bin_size',0.01, ... % binning size in s
     'extra_time',[0.1 0.1], ... % time before targ pres and after end in s
-    'all_points',true);
+    'all_points',false);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -200,11 +193,7 @@ for iS = 1:size(sessions,1)
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % check quality of trials and prune some bad ones
-        if ~exist(td_filename,'file') || remakeTD
-            bad_idx = cellfun(@(x) any(sqrt(x(:,1).^2+x(:,2).^2) > max_vel),{trial_data.vel});
-            trial_data(bad_idx) = [];
-            disp(['Pruning ' num2str(sum(bad_idx)) ' trials with crazy velocities...']);
-            
+        if ~exist(td_filename,'file') || remakeTD            
             disp('Checking sorted units...');
             trial_data = removeBadTrials(trial_data);
             trial_data = getCommonUnits(trial_data);
