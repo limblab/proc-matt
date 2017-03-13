@@ -60,11 +60,11 @@ n_spikes = size(trial_data(1).([cov_array spike_field_name]),2);
 cov_kin = zeros(n_data,n_kin);
 cov_spikes = zeros(n_data,n_spikes);
 
-shift_data = any(~isempty(cell2mat(cellfun(@(x) strfind(x,'_shift'),fieldnames(trial_data),'Uni',0))));
+shift_data = any(~isempty(cell2mat(cellfun(@(x) strfind(x,'_rcb'),fieldnames(trial_data),'Uni',0))));
 if shift_data
     n_kin_shift = 0;
     for i = 1:length(kin_signals)
-        n_kin_shift = n_kin_shift + size(trial_data(1).([kin_signals{i} '_shift']),2);
+        n_kin_shift = n_kin_shift + size(trial_data(1).([kin_signals{i} '_rcb']),2);
     end
     cov_kin_shift = zeros(n_data,n_kin_shift);
     
@@ -110,7 +110,7 @@ for trial = idx_trial
     if shift_data
         c = 0;
         for j = 1:length(kin_signals)
-            temp = trial_data(trial).([kin_signals{j} '_shift']);
+            temp = trial_data(trial).([kin_signals{j} '_rcb']);
             cov_kin_shift(store_idx,c+1:c+size(temp,2)) = temp(idx,:);
             c = c+size(temp,2);
         end
@@ -125,7 +125,7 @@ if ~strcmpi(cov_array,pred_array)
     n_spikes = size(trial_data(1).([pred_array '_spikes']),2);
     pred_spikes = zeros(n_data,n_spikes);
     
-    if shift_data
+    if isfield(trial_data,[pred_array '_spikes_shift'])
         n_spikes_shift = size(trial_data(1).([pred_array '_spikes_shift']),2);
         pred_spikes_shift = zeros(n_data,n_spikes_shift);
     else
@@ -146,7 +146,7 @@ if ~strcmpi(cov_array,pred_array)
         pred_spikes(store_idx,:) = temp(idx,:);
         
         % check if we want any history
-        if shift_data
+        if isfield(trial_data,[pred_array '_spikes_shift'])
             temp = trial_data(trial).([pred_array '_spikes_shift']);
             pred_spikes_shift(store_idx,:) = temp(idx,:);
         end

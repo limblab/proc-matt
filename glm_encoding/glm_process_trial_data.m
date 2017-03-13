@@ -74,7 +74,7 @@ params.good_cells = good_cells;
 % Re-bin data
 if bin_size > 1
     disp('Binning...');
-    trial_data = truncateAndBin(trial_data,bin_size);
+    trial_data = binTD(trial_data,bin_size);
     params.dt = dt*bin_size;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,22 +88,27 @@ if do_rcb
     for i = 1:length(arrays)
         rcb_which_vars{i} = [arrays{i} '_spikes'];
     end
-    rcb_which_vars = [rcb_which_vars, kin_signals];
+    params.which_vars = [rcb_which_vars, kin_signals];
     params.rcb_which_vars = rcb_which_vars;
     params.rcb_n = params.unit_lags;
     tic;
-    trial_data = convBasisFunc(trial_data,rcb_which_vars,params);
+    trial_data = convBasisFunc(trial_data,params);
     toc;
     
-    for i = 1:length(kin_signals)
-        % shift kinematics by kin_lags backwards
-        for j = 1:length(trial_data)
-            temp = trial_data(j).(kin_signals{i});
-            trial_data(j).(kin_signals{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
-            temp = trial_data(j).([kin_signals{i} '_shift']);
-            trial_data(j).([kin_signals{i} '_shift']) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+    if 1
+        for i = 1:length(kin_signals)
+            % shift kinematics by kin_lags backwards
+            for j = 1:length(trial_data)
+                temp = trial_data(j).(kin_signals{i});
+                trial_data(j).(kin_signals{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+                temp = trial_data(j).([kin_signals{i} '_rcb']);
+                trial_data(j).([kin_signals{i} '_rcb']) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+            end
         end
+    else
+        disp('HEY! Im skipping this thing I did where I shifted kin spikes.');
     end
+    
 elseif ~isempty(kin_signals) || do_all_history || do_self_history
     error('FIX KINEMATIC SHIFT');
     if unit_lags > 0

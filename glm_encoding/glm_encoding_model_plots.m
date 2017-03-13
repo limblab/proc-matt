@@ -87,7 +87,9 @@ sessions = { ...
         'Mihili','2014-03-04'; ...
         'Mihili','2014-03-06'; ...
     };
-
+basenames = {'trainad','trainad','trainad'};
+extranames = {'','potent_bl','null_bl'};
+array_models = {'PMd-M1','PMd-M1','PMd-M1'};
 
 pert = 'FF';
 tasks = {'CO'};
@@ -106,7 +108,7 @@ how_to_group = 'slide'; % average, pool, slide
 
 do_norm = true;
 do_diff = true;
-remove_outliers = true;
+remove_outliers = false;
 error_bars = 'ste'; % 'boot','ste'
 num_bootstraps = 1000;
 
@@ -158,7 +160,7 @@ if do_same_cells
         good_cells = [];
         for file = 1:length(filenames)
             % get good cells for both conditions
-            out_struct = get_plot_metrics({fullfile(rootDir,TDDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat'])}, ...
+            out_struct = get_plot_metrics({fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat'])}, ...
                 struct( ...
                 'which_metric',which_metric, ...
                 'epochs',{epochs}, ...
@@ -198,7 +200,7 @@ for idx_cond = 1:length(basenames)
     % build list of filenames
     filepaths = cell(1,length(filenames));
     for file = 1:length(filenames)
-        filepaths{file} = fullfile(rootDir,TDDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat']);
+        filepaths{file} = fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat']);
     end
     
     out_struct = get_plot_metrics(filepaths, ...
