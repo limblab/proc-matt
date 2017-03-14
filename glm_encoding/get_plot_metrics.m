@@ -129,3 +129,4 @@ if do_behavior
     end
 end
 
+out_struct.params = params;

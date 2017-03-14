@@ -87,9 +87,9 @@ sessions = { ...
         'Mihili','2014-03-04'; ...
         'Mihili','2014-03-06'; ...
     };
-basenames = {'trainad','trainad','trainad'};
-extranames = {'','potent_bl','null_bl'};
-array_models = {'PMd-M1','PMd-M1','PMd-M1'};
+basenames = {'trainad','trainad'};
+extranames = {'potent_bl','null_bl'};
+array_models = {'PMd-M1','PMd-M1'};
 
 pert = 'FF';
 tasks = {'CO'};
@@ -100,7 +100,7 @@ which_metric = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
 pr2_cutoff = 0.01;
 pr2_op = 'min'; % which operation for filtering ('min','max','mean','median')
 pr2_ad_check = false; % only keeps cells that predict in WO
-do_same_cells = false; % really only works for testing tweaks of model
+do_same_cells = true; % really only works for testing tweaks of model
 
 plot_op = 'mean';
 group_size = 20;
@@ -108,7 +108,7 @@ how_to_group = 'slide'; % average, pool, slide
 
 do_norm = true;
 do_diff = true;
-remove_outliers = false;
+remove_outliers = true;
 error_bars = 'ste'; % 'boot','ste'
 num_bootstraps = 1000;
 
@@ -138,10 +138,9 @@ plot_colors = [0    0.4470    0.7410; ...
 session_idx = ismember(filedb.Monkey,monkeys) & ismember(filedb.Perturbation,pert) & ismember(filedb.Task,tasks) & ismember(filedb.Date,dates);
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% if we want the same cells for all models, make sure all are good
 if do_same_cells
-    
-    
     all_good_cells = cell(1,length(basenames));
     for idx_cond = 1:length(basenames)
         if isempty(extranames{idx_cond})
@@ -179,8 +178,6 @@ if do_same_cells
 end
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold all;
 h = zeros(1,length(basenames)*2);
@@ -213,6 +210,7 @@ for idx_cond = 1:length(basenames)
         'do_good_cells',~do_same_cells, ...
         'do_behavior',false, ...
         'filter_trials',filter_trials));
+    
     if do_same_cells
         cv = out_struct.cv(good_cells,:);
         e_pr2 = cell(1,length(out_struct.e_pr2));

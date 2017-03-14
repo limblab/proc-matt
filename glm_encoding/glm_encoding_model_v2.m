@@ -32,16 +32,34 @@ close all;
 
 dataSummary;
 
-outputSubdir = 'trainad_test_null';
-params_comment = 'training on post-learning data with 50 msec bins';
+outputSubdir = 'trainad_bl_NEW';
+params_comment = 'training on baseline data with 50 msec bins';
 
 params_file = '';% optionally give .mat file containing params to use
 % Must be in the outputSubdir
 
 sessions = { ...
-        'Chewie','2016-10-05'; ...
+    'Chewie','2016-09-09'; ... % VR
+    'Chewie','2016-09-12'; ...
+    'Chewie','2016-09-14'; ...
+    'Chewie','2016-10-06'; ...
+    'Mihili','2014-03-03'; ...
+    'Mihili','2014-03-04'; ...
+    'Mihili','2014-03-06'; ...
+    'Chewie','2016-09-15'; ... % CF
+    'Chewie','2016-10-05'; ...
     'Chewie','2016-10-07'; ...
     'Chewie','2016-10-11'; ...
+    'Mihili','2014-02-03'; ...
+    'Mihili','2014-02-17'; ...
+    'Mihili','2014-02-18'; ...
+    'Mihili','2014-03-07'; ...
+%         'MrT','2013-08-19'; ... % CF
+%         'MrT','2013-08-21'; ...
+%         'MrT','2013-08-23'; ...
+%         'MrT','2013-09-03'; ... %VR
+%         'MrT','2013-09-05'; ...
+%         'MrT','2013-09-09'; ...
     };
 
 
@@ -55,53 +73,54 @@ array_pairs = {'PMd','M1';'M1','M1';'PMd','PMd'};
 
 %%
 if isempty(params_file)
-    dt                   = 0.01; % time step size for data
-    bin_size             = 5;    % how many samples to group together when rebinning (bin width is num_samples*dt)
+    dt                     = 0.01; % time step size for data
+    bin_size               = 5;    % how many samples to group together when rebinning (bin width is num_samples*dt)
     
-    result_codes         = {'R'}; % which trials to include
+    result_codes           = {'R'}; % which trials to include
     
-    training_data        = {'AD',[0.5 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
-    testing_data         = {'BL','all'; ...
-                           'AD',[0 0.5]; ... % should match this to be proportion or trial range based on training_data
-                           'WO','all'};
-    block_size_testing   = 1; % size of blocks in # trials for AD/WO
+    training_data          = {'BL',[0 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
+    testing_data           = {'AD','all'; ... % should match this to be proportion or trial range based on training_data
+                              'WO','all'};
+    block_size_testing     = 1; % size of blocks in # trials for AD/WO
     % note: can change this and still reload CV
     
     % how to truncate trials {idx name, number of bins after}
-    train_start_idx      = {'idx_target_on',0}; %{'idx_target_on',-4}
-    train_end_idx        = {'idx_trial_end',-2}; %{'idx_go_cue',4}
-    test_start_idx       = {'idx_target_on',0}; % NOTE: CAN CHANGE THESE
-    test_end_idx         = {'idx_trial_end',-2}; %   AND STILL RELOAD CV
+    train_start_idx        = {'idx_target_on',0}; %{'idx_target_on',-4}
+    train_end_idx          = {'idx_trial_end',-2}; %{'idx_go_cue',4}
+    test_start_idx         = {'idx_target_on',0}; % NOTE: CAN CHANGE THESE
+    test_end_idx           = {'idx_trial_end',-2}; %   AND STILL RELOAD CV
     %   NOTE: this is after rebinning at the moment
     
-    cv_folds             = 20; % how many folds for cross-validation
-    cv_rand              = true; % whether to randomly select CV datapoints
+    cv_folds               = 10; % how many folds for cross-validation
+    cv_rand                = true; % whether to randomly select CV datapoints
     
-    block_size_fr_test   = 100;   % how many trials to group for FR test
-    fr_test_alpha        = 1e-3; % p value cut off for t-test
-    fr_min               = 0.3; % minimum session-wide spiking for inclusion
+    block_size_fr_test     = 100;   % how many trials to group for FR test
+    fr_test_alpha          = 1e-3; % p value cut off for t-test
+    fr_min                 = 0.15; % minimum session-wide spiking for inclusion
     
-    do_lasso             = false;  % if you want to regularize
-    lasso_lambda         = 0.0083; % lambda parameter for lasso
-    lasso_alpha          = 0.01;   % alpha parameter for lasso
+    do_lasso               = false;  % if you want to regularize
+    lasso_lambda           = 0.0083; % lambda parameter for lasso
+    lasso_alpha            = 0.01;   % alpha parameter for lasso
     
-    do_pca               = 'null'; % false, 'pca', 'potent', 'null'
-    smooth_pca_proj_spikes = false;
-    pca_dims             = struct('M1',1:8,'PMd',1:16); % ...'ARRAY','all' or specify which dimensions, e.g. 1:30...
+    do_pca                 = false; % false, 'pca', 'potent', 'null'
+    smooth_pca_proj_spikes = true;
+    center_pca             = true;
+    pca_dims               = struct('M1',1:8,'PMd',1:16); % ...'ARRAY','all' or specify which dimensions, e.g. 1:30...
+    potent_trials          = {'epoch','bl'};
     
-    do_rcb               = true;  % use raised cosine basis functions for history
-    do_all_history       = false; % include history for all units
-    do_self_history      = false;
-    unit_lags            = 2;     % how many bins in the past for each neuron to include as covariates (if ~do_rcb)
-    rcb_hpeaks           = [dt*bin_size,0.1];
-    rcb_b                = 0.1;
+    do_rcb                 = true;  % use raised cosine basis functions for history
+    do_all_history         = false; % include history for all units
+    do_self_history        = false;
+    unit_lags              = 2;     % how many bins in the past for each neuron to include as covariates (if ~do_rcb)
+    rcb_hpeaks             = [dt*bin_size,0.1];
+    rcb_b                  = 0.1;
     %   NOTE: this is after rebinning at the moment
     
-    kin_signals          = {'pos','vel','speed','force'}; % names of kinematic covariates
-    kin_lags             = 3; % how many bins to lag (if ~do_rcb) or how many raised cosines (if do_rcb)
+    kin_signals            = {'pos','vel','speed','force'}; % names of kinematic covariates
+    kin_lags               = 3; % how many bins to lag (if ~do_rcb) or how many raised cosines (if do_rcb)
     %   NOTE: this is after rebinning at the moment
     
-    num_bootstraps       = 1000; % how many resamples for R2
+    num_bootstraps         = 1000; % how many resamples for R2
     
 else % load up params from whatever file
     load(params_file,'cv_params');
@@ -135,8 +154,8 @@ if ~exist('params_comment','var'), params_comment = ''; end
 
 
 %%
-if ~exist(fullfile(rootDir,TDDir,outputSubdir),'dir')
-    mkdir(fullfile(rootDir,TDDir,outputSubdir));
+if ~exist(fullfile(rootDir,resultsDir,outputSubdir),'dir')
+    mkdir(fullfile(rootDir,resultsDir,outputSubdir));
 end
 
 disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
@@ -191,6 +210,8 @@ for idx_pert = 1:length(perts)
             params.kin_lags = kin_lags;
             params.do_pca = do_pca;
             params.smooth_pca_proj_spikes = smooth_pca_proj_spikes;
+            params.center_pca = center_pca;
+            params.potent_trials = potent_trials;
             if ischar(do_pca)
                 params.pca_dims = pca_dims;
             end
@@ -215,6 +236,12 @@ for idx_pert = 1:length(perts)
             params.comment = params_comment;
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
+            if params.smooth_pca_proj_spikes
+                disp('SMOOTHING PCA PROJECTION SPIKES!');
+            end
+            if params.center_pca
+                disp('CENTERING PCA!');
+            end
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Load the trial data file
@@ -226,7 +253,7 @@ for idx_pert = 1:length(perts)
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % will save cross validated BL predictions so I don't have to
             % redo them to to apply the model to other time points
-            cv_fn = fullfile(rootDir,TDDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '_cv.mat']);
+            cv_fn = fullfile(rootDir,resultsDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '_cv.mat']);
             do_cv = true;
             if exist(cv_fn,'file')
                 temp_params = cv_params;
@@ -247,14 +274,12 @@ for idx_pert = 1:length(perts)
             % bin and prepare signals
             [trial_data, params] = glm_process_trial_data(trial_data,params);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
+            disp('Duplicating trial data for test set')
+            trial_data_test = trimTD(trial_data,test_start_idx,test_end_idx);
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % filter trials and partition testing/training sets
-            if isfield(trial_data,'result') % old format didn't include result and only had 'R'
-                disp('Result not found. All trials are reward trials.');
-                trial_data = trial_data(ismember({trial_data.result},result_codes));
-            end
+            [~,trial_data] = getTDidx(trial_data,'result',result_codes);
             
             if length(training_data{2}) > 1 % use percentages
                 [train_trials,test_trials, test_epochs] = deal([]);
@@ -332,9 +357,9 @@ for idx_pert = 1:length(perts)
             % Compute PCA if we don't need to leave out the pred neuron
             if ~strcmpi(cov_array,pred_array) && ischar(do_pca) % we don't have to leave one out so just fit once
                 if strcmpi(do_pca,'pca')
-                    [w,~,~,mu] = getPCA(trial_data,struct('array',cov_array,'bin_size',dt*bin_size,'trial_idx',1:length(trial_data),'neurons',1:num_cov_neurons));
-                    params.pca_w = w;
-                    params.pca_mu = mu;
+                    [~,temp] = getPCA(trial_data,struct('signals',{{[cov_array '_spikes'],1:num_cov_neurons}},'use_trials',1:length(trial_data)));
+                    params.pca_w = temp.w;
+                    params.pca_mu = temp.mu;
                 elseif strcmpi(do_pca,'potent') || strcmpi(do_pca,'null')
                     disp('Getting potent/null space.')
                     % check that PMd is cov_array
@@ -342,11 +367,19 @@ for idx_pert = 1:length(perts)
                         error('PMd must be covariate array and M1 must be predicted array for potent/null space analysis');
                     end
                     % do SVD to get null/potent spaces
-                    [V_potent, V_null, w, ~, mu, ~] = getPotentSpace(trial_data,cov_array,pred_array,params);
-                    params.pca_w = w;
-                    params.pca_mu = mu;
-                    params.V_potent = V_potent;
-                    params.V_null = V_null;                    
+                    pn_params = struct( ...
+                        'in_signals', [cov_array '_spikes'], ...
+                        'out_signals',[pred_array '_spikes'], ...
+                        'in_dims',max(params.pca_dims.(cov_array)), ...
+                        'out_dims',max(params.pca_dims.(pred_array)), ...
+                        'do_smoothing',false, ...
+                        'use_trials',{potent_trials});
+                        
+                    [~,temp] = getPotentSpace(trial_data,pn_params);
+                    params.pca_w = temp.w_in;
+                    params.pca_mu = temp.mu_in;
+                    params.V_potent = temp.V_potent;
+                    params.V_null = temp.V_null;                    
                 end
             end
             
@@ -366,10 +399,10 @@ for idx_pert = 1:length(perts)
                 if strcmpi(cov_array,pred_array) && strcmpi(do_pca,'pca')  % recompute PCA each time
                     % leave predicted neuron out of PCA
                     neuron_idx = 1:num_pred_neurons; neuron_idx(unit) = [];
-                    [w,~,~,mu] = getPCA(trial_data,struct('array',cov_array,'bin_size',dt*bin_size,'trial_idx',1:length(trial_data),'neurons',neuron_idx));
+                    [~,temp] = getPCA(trial_data,struct('signals',{{[cov_array '_spikes'],neuron_idx}},'use_trials',1:length(trial_data)));
                     % used in glm_prep_inputs
-                    params.pca_w = w;
-                    params.pca_mu = mu;
+                    params.pca_w = temp.w;
+                    params.pca_mu = temp.mu;
                     % note that if it's the same array, null/potent doesn't make sense
                 end
                 
@@ -476,6 +509,14 @@ for idx_pert = 1:length(perts)
                         yfit_basic = exp([ones(size(x_basic,1),1), x_basic]*bl_unit_models(unit).b_basic)';
                     end
                     
+                    if block_size_testing == 1
+                        % add prediction to trial_data
+                        trial_data_test(test_trials(e,:)).yfit_full(:,unit) = yfit_full;
+                        if ~isempty(b_basic)
+                            trial_data_test(test_trials(e,:)).yfit_basic(:,unit) = yfit_basic;
+                        end
+                    end
+                    
                     % compute R2
                     % get vector of bootstrap indices
                     bs = randi(length(y),length(y),num_bootstraps);
@@ -509,7 +550,7 @@ for idx_pert = 1:length(perts)
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Save results
             if do_cv
-                save(fullfile(rootDir,TDDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '_cv.mat']),'pr2_full_cv','pr2_basic_cv','rpr2_cv','cv_params');
+                save(fullfile(rootDir,resultsDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '_cv.mat']),'pr2_full_cv','pr2_basic_cv','rpr2_cv','cv_params');
             end
             
             results = struct( ...
@@ -521,7 +562,8 @@ for idx_pert = 1:length(perts)
                 'rpr2_cv', rpr2_cv, ...
                 'bl_model', bl_unit_models);
             
-            save(fullfile(rootDir,TDDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '.mat']),'results','params');
+            save(fullfile(rootDir,resultsDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '_td.mat']),'trial_data_test','params');
+            save(fullfile(rootDir,resultsDir,outputSubdir,[pert '-' cov_array '-' pred_array '_' filename '.mat']),'results','params');
             clear file_results;
         end % end array pair loop
     end % end file loop
