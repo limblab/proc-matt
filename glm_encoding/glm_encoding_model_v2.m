@@ -26,14 +26,19 @@
 %   - look at spatial location on array with manifold
 
 
+%%% Differences of current trial_data from old:
+%       Old one cut trials < 0.1 ms
+%       Old one cut trials where the movement or peak weren't found
+%       
+
 clear;
 clc;
 close all;
 
 dataSummary;
 
-outputSubdir = 'trainad_bl_NEW';
-params_comment = 'training on baseline data with 50 msec bins';
+outputSubdir = 'trainad_test';
+params_comment = 'training on AD data with 50 msec bins';
 
 params_file = '';% optionally give .mat file containing params to use
 % Must be in the outputSubdir
@@ -43,17 +48,17 @@ sessions = { ...
     'Chewie','2016-09-12'; ...
     'Chewie','2016-09-14'; ...
     'Chewie','2016-10-06'; ...
-    'Mihili','2014-03-03'; ...
-    'Mihili','2014-03-04'; ...
-    'Mihili','2014-03-06'; ...
-    'Chewie','2016-09-15'; ... % CF
-    'Chewie','2016-10-05'; ...
-    'Chewie','2016-10-07'; ...
-    'Chewie','2016-10-11'; ...
-    'Mihili','2014-02-03'; ...
-    'Mihili','2014-02-17'; ...
-    'Mihili','2014-02-18'; ...
-    'Mihili','2014-03-07'; ...
+%     'Mihili','2014-03-03'; ...
+%     'Mihili','2014-03-04'; ...
+%     'Mihili','2014-03-06'; ...
+%     'Chewie','2016-09-15'; ... % CF
+%     'Chewie','2016-10-05'; ...
+%     'Chewie','2016-10-07'; ...
+%     'Chewie','2016-10-11'; ...
+%     'Mihili','2014-02-03'; ...
+%     'Mihili','2014-02-17'; ...
+%     'Mihili','2014-02-18'; ...
+%     'Mihili','2014-03-07'; ...
 %         'MrT','2013-08-19'; ... % CF
 %         'MrT','2013-08-21'; ...
 %         'MrT','2013-08-23'; ...
@@ -65,11 +70,11 @@ sessions = { ...
 
 monkeys = unique(sessions(:,1));
 tasks = {'CO'};
-perts = {'FF','VR'};
+perts = {'VR'};
 dates = sessions(:,2);
 % {COVARIATE, PREDICTED}, will loop along rows
-array_pairs = {'PMd','M1';'M1','M1';'PMd','PMd'};
-% array_pairs = {'PMd','M1'};
+% array_pairs = {'PMd','M1';'M1','M1';'PMd','PMd'};
+array_pairs = {'PMd','M1'};
 
 %%
 if isempty(params_file)
@@ -78,8 +83,9 @@ if isempty(params_file)
     
     result_codes           = {'R'}; % which trials to include
     
-    training_data          = {'BL',[0 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
-    testing_data           = {'AD','all'; ... % should match this to be proportion or trial range based on training_data
+    training_data          = {'AD',[0.5 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
+    testing_data           = {'BL','all'; ... % should match this to be proportion or trial range based on training_data
+                              'AD',[0 0.5]; ...
                               'WO','all'};
     block_size_testing     = 1; % size of blocks in # trials for AD/WO
     % note: can change this and still reload CV
@@ -96,7 +102,7 @@ if isempty(params_file)
     
     block_size_fr_test     = 100;   % how many trials to group for FR test
     fr_test_alpha          = 1e-3; % p value cut off for t-test
-    fr_min                 = 0.15; % minimum session-wide spiking for inclusion
+    fr_min                 = 0.3; % minimum session-wide spiking for inclusion
     
     do_lasso               = false;  % if you want to regularize
     lasso_lambda           = 0.0083; % lambda parameter for lasso
@@ -116,7 +122,7 @@ if isempty(params_file)
     rcb_b                  = 0.1;
     %   NOTE: this is after rebinning at the moment
     
-    kin_signals            = {'pos','vel','speed','force'}; % names of kinematic covariates
+    kin_signals            = {'vel','speed'}; % names of kinematic covariates
     kin_lags               = 3; % how many bins to lag (if ~do_rcb) or how many raised cosines (if do_rcb)
     %   NOTE: this is after rebinning at the moment
     
@@ -249,6 +255,10 @@ for idx_pert = 1:length(perts)
             load(fullfile(rootDir,TDDir,[filename '.mat']));
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
+%             trial_data = removeBadTrials(trial_data,struct('ranges', ...
+%                 {{'idx_go_cue','idx_movement_on',[10,40]; ...
+%                 'idx_movement_on','idx_peak_speed',[10,50]; ...
+%                 'idx_peak_speed','idx_trial_end',[60,100]}}));
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % will save cross validated BL predictions so I don't have to
@@ -275,7 +285,8 @@ for idx_pert = 1:length(perts)
             [trial_data, params] = glm_process_trial_data(trial_data,params);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             disp('Duplicating trial data for test set')
-            trial_data_test = trimTD(trial_data,test_start_idx,test_end_idx);
+            trial_data_test = trial_data;
+            trial_data_test = rmfield(trial_data_test,getTDfields(trial_data_test,'time'));
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % filter trials and partition testing/training sets
@@ -511,8 +522,10 @@ for idx_pert = 1:length(perts)
                     
                     if block_size_testing == 1
                         % add prediction to trial_data
+                        trial_data_test(test_trials(e,:)).x_full = x_full;
                         trial_data_test(test_trials(e,:)).yfit_full(:,unit) = yfit_full;
                         if ~isempty(b_basic)
+                            trial_data_test(test_trials(e,:)).x_basic = x_basic;
                             trial_data_test(test_trials(e,:)).yfit_basic(:,unit) = yfit_basic;
                         end
                     end

@@ -2,32 +2,28 @@
 % models
 dataSummary;
 
-sessions = { ...
-    'Chewie','2016-10-07'; ...
-    };
+monkey = 'Chewie';
+date = '2016-10-07';
 
 basename = 'trainad';
 extraname = 'potent_bl';
 array_model = 'PMd-M1';
 
 pert = 'FF';
-tasks = {'CO'};
-dates = sessions(:,2);
-monkeys = unique(sessions(:,1));
-
+task = 'CO';
 
 which_metric = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
 pr2_cutoff = 0.01;
 pr2_op = 'min'; % which operation for filtering ('min','max','mean','median')
 do_same_cells = false;
 
-epoch = {'AD'};
+test_trials = {'AD',[0 0.5]};
 num_trials = 20;
 
-%%
 font_size = 14;
 line_width = 2;
 
+%%
 plot_colors = [0    0.4470    0.7410; ...
     0.8500    0.3250    0.0980; ...
     %     0.9290    0.6940    0.1250; ...
@@ -36,10 +32,46 @@ plot_colors = [0    0.4470    0.7410; ...
     0.3010    0.7450    0.9330; ...
     0.6350    0.0780    0.1840];
 
-session_idx = ismember(filedb.Monkey,monkeys) & ismember(filedb.Perturbation,pert) & ismember(filedb.Task,tasks) & ismember(filedb.Date,dates);
+session_idx = ismember(filedb.Monkey,monkey) & ismember(filedb.Perturbation,pert) & ismember(filedb.Task,task) & ismember(filedb.Date,date);
 
 % if we want the same cells for all models, make sure all are good
-same_good_cells;
+if do_same_cells
+    all_good_cells = cell(1,length(basenames));
+    for idx_cond = 1:length(basenames)
+        if isempty(extranames{idx_cond})
+            outputSubdir = basenames{idx_cond};
+        else
+            outputSubdir = [basenames{idx_cond} '_' extranames{idx_cond}];
+        end
+        
+        idx = find(strcmpi(pert,filedb.Perturbation) & session_idx);
+        filenames = cell(1,length(idx));
+        for s = 1:length(idx)
+            filenames{s} = [filedb.Monkey{idx(s)} '_' filedb.Task{idx(s)} '_' filedb.Perturbation{idx(s)} '_' filedb.Date{idx(s)}];
+        end
+        
+        % build list of filenames
+        good_cells = [];
+        for file = 1:length(filenames)
+            % get good cells for both conditions
+            out_struct = get_plot_metrics({fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat'])}, ...
+                struct( ...
+                'which_metric',which_metric, ...
+                'epochs',{epochs}, ...
+                'pr2_cutoff',pr2_cutoff, ...
+                'pr2_op',pr2_op, ...
+                'pr2_ad_check', pr2_ad_check, ...
+                'do_good_cells',true, ...
+                'do_behavior',false, ...
+                'filter_trials',filter_trials));
+            
+            good_cells = [good_cells; out_struct.good_cells];
+        end
+        all_good_cells{idx_cond} = good_cells;
+    end
+    good_cells = all(cell2mat(all_good_cells),2);
+end
+
 
 if isempty(extraname)
     outputSubdir = basename;
@@ -51,15 +83,11 @@ idx = find(strcmpi(pert,filedb.Perturbation) & session_idx);
 
 filename = [filedb.Monkey{idx} '_' filedb.Task{idx} '_' filedb.Perturbation{idx} '_' filedb.Date{idx}];
 
-% for each good cell, predict in the first NUM_TRIALS of EPOCH and last
-% NUM_TRIALS of EPOCH
-all_r2 = [];
-
 filepath = fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_model '_' filename '.mat']);
-out_struct = get_plot_metrics(filepath, ...
+out_struct = get_plot_metrics({filepath}, ...
     struct( ...
     'which_metric',which_metric, ...
-    'epochs',{epoch}, ...
+    'epochs',{test_trials(1)}, ...
     'pr2_cutoff',pr2_cutoff, ...
     'pr2_op',pr2_op, ...
     'pr2_ad_check', false, ...
@@ -81,13 +109,13 @@ end
 
 load(fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_model '_' filename '_td.mat']));
 % trained on 0.5->1 of AD
-ad_idx = getTDidx(trial_data_test,'epoch','AD',[0 0.5]);
+ad_idx = getTDidx(trial_data_test,'epoch',test_trials{1},'range',test_trials{2});
 
 for unit = 1:size(cv,2)
     figure;
     r2 = zeros(3,2);
     
-    y1 = cat(1,trial_data_test(ad_idx(1:num_trials)).([pred_array '_spikes']));
+    y1 = cat(1,trial_data_test(ad_idx(1:num_trials)).([params.pred_array '_spikes']));
     yf1 = cat(1,trial_data_test(ad_idx(1:num_trials)).yfit_full);
     yb1 = cat(1,trial_data_test(ad_idx(1:num_trials)).yfit_basic);
     

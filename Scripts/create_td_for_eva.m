@@ -7,8 +7,8 @@ dataSummary;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 monkey = 'Chewie';
 task = 'CO';
-pert = 'VR';
-date = '2016-10-06';
+pert = 'FF';
+date = '2016-10-11';
 epoch = 'BL';
 filenum = '001';
 SubDir = 'eva';

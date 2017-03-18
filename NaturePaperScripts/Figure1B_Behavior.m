@@ -4,7 +4,7 @@ dataSummary;
 trial_params;
 
 % Session parameters
-monkeys = {'Chewie'};
+monkeys = {'Chewie','Mihili','all'};
 tasks = {'CO'};
 perts = {'FF'};
 epochs = {'BL','AD','WO'};
@@ -13,6 +13,9 @@ session_idx = getFileDBidx(filedb, ...
     {'Task',tasks,'Perturbation',perts,'Monkey',monkeys}, ...
     {'~(ismember(filedb.Monkey,''Mihili'') & datenum(filedb.Date) > datenum(''2015-01-01''))', ...
     'cellfun(@(x) all(ismember({''M1'',''PMd''},x)),filedb.Arrays)'});
+
+idx_start = {'idx_go_cue', 0};
+idx_end   = {'idx_trial_end', 0};
 
 % Load data
 fnames = cell(1,length(session_idx));
@@ -27,7 +30,11 @@ func_calls = [trial_func_calls, {{@trimTD,idx_start,idx_end}}];
 %% MAKE ERROR PLOTS
 % Get behavior metrics for all sessions
 for monkey = monkeys
-    idx = session_idx(strcmpi(filedb.Monkey(session_idx),monkey{1}));
+    if strcmpi(monkey{1},'all')
+        idx = session_idx;
+    else
+        idx = session_idx(strcmpi(filedb.Monkey(session_idx),monkey{1}));
+    end
     err = cell(length(idx),length(epochs));
     for iFile = 1:length(idx)
         file = idx(iFile);
@@ -37,22 +44,31 @@ for monkey = monkeys
             'task',filedb.Task{file},...
             'perturbation',filedb.Perturbation{file});
         
-        td = smoothSignals(td,struct('signals','vel','kernel_SD',0.05));
+        td = smoothSignals(td,struct('signals','vel','kernel_SD',0.1));
         temp = getLearningMetrics(td,struct( ...
-            'time_window',{{'idx_go_cue',0;'idx_movement_on',20}}));
+            'time_window',{{'idx_go_cue',1;'idx_movement_on',16}}));
         for e = 1:length(epochs)
             flip_sign = sign(td(1).perturbation_info(2));
             err{iFile,e} = flip_sign*temp(getTDidx(td,'epoch',epochs{e}));
         end
     end
-    err = cell2mat(reshape(cellfun(@(x) x(1:min(min(cellfun(@length,err),[],1)))',err,'uni',0),length(idx),1,length(epochs)));
+    %err = cell2mat(reshape(cellfun(@(x) x(1:min(min(cellfun(@length,err),[],1)))',err,'uni',0),length(idx),1,length(epochs)));
+    for e = 1:length(epochs)
+        err(:,e) = cellfun(@(x) x(1:min(cellfun(@length,err(:,e)))),err(:,e),'uni',0);
+    end
+    
     figure;
     for e = 1:length(epochs)
+        %m = squeeze(err(:,:,e))';
+        m = cat(2,err{:,e});
+        m = moving_average(m,2);
+        
         subplot(1,length(epochs),e); hold all;
-        plot(squeeze(err(:,:,e))','.');
-        plot(median(err(:,:,e),1)','k-','LineWidth',3);
+        %plot(squeeze(err(:,:,e))','-','Color',[0.4,0.4,0.4]);
+        plot(m*180/pi,'-','Color',[0.6,0.6,0.6]);
+        plot(mean(m,2)*180/pi,'k-','LineWidth',3);
         axis('tight');
-        set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-1 1]);
+        set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-45 45]);
     end
 end
 
@@ -61,8 +77,8 @@ end
 %% MAKE PINWHEEL PLOTS
 % get time-warped position traces for BL, early AD, late AD
 
-monkey_files = [4,2,2];
-num_reaches = 3; % first/last of this many to each target
+monkey_files = [4,2];
+num_reaches = 1; % first/last of this many to each target
 
 for m = 1:length(monkeys)
     monkey = monkeys{m};
@@ -94,12 +110,12 @@ for m = 1:length(monkeys)
             'target_direction',struct('do_stretch',true,'num_samp',1000));
         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'b--','LineWidth',2);
         
-%         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'first',num_reaches})), ...
-%             'target_direction',struct('do_stretch',true,'num_samp',1000));
-%         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r-','LineWidth',2);
-%         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'last',num_reaches})), ...
-%             'target_direction',struct('do_stretch',true,'num_samp',1000));
-%         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r--','LineWidth',2);
+        %         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'first',num_reaches})), ...
+        %             'target_direction',struct('do_stretch',true,'num_samp',1000));
+        %         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r-','LineWidth',2);
+        %         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'last',num_reaches})), ...
+        %             'target_direction',struct('do_stretch',true,'num_samp',1000));
+        %         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r--','LineWidth',2);
     end
 end
 

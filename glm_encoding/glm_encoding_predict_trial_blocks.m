@@ -1,7 +1,7 @@
 % This will plot mean prediction R2 for the first and last trials of some
 % epoch for different models for all neurons pooled
-
 dataSummary;
+
 sessions = { ...
     'Chewie','2016-09-15'; ... % CF
     'Chewie','2016-10-05'; ...
@@ -19,9 +19,11 @@ sessions = { ...
     'Mihili','2014-03-04'; ...
     'Mihili','2014-03-06'; ...
     };
+
 basenames = {'trainad','trainad'};
-extranames = {'potent_bl','null_bl'};
+extranames = {'potent_NEW','null_NEW'};
 array_models = {'PMd-M1','PMd-M1'};
+
 
 pert = 'FF';
 tasks = {'CO'};
@@ -34,8 +36,10 @@ pr2_cutoff = 0.01;
 pr2_op = 'min'; % which operation for filtering ('min','max','mean','median')
 do_same_cells = false;
 
+
 test_trials = {'AD',[0 0.5]};
 num_trials = 20;
+
 
 %%
 plot_colors = [0    0.4470    0.7410; ...
@@ -106,7 +110,7 @@ for idx_cond = 1:length(basenames)
     all_r2 = [];
     for file = 1:length(filenames)
         filepath = fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat']);
-        out_struct = get_plot_metrics(filepath, ...
+        out_struct = get_plot_metrics({filepath}, ...
             struct( ...
             'which_metric',which_metric, ...
             'epochs',{test_trials(1)}, ...
@@ -132,50 +136,55 @@ for idx_cond = 1:length(basenames)
         load(fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '_td.mat']));
         
         % e.g. trained on 0.5->1 of AD
-        trial_idx = getTDidx(trial_data_test,'epoch',test_trials{1},test_trials{2});
+        trial_idx = getTDidx(trial_data_test,'epoch',test_trials{1},'range',test_trials{2});
         
         y = cat(1,trial_data_test(trial_idx(1:num_trials)).([params.pred_array '_spikes']));
-        yf = cat(1,trial_data_test(trial_idx(1:num_trials)).yfit_full);
         yb = cat(1,trial_data_test(trial_idx(1:num_trials)).yfit_basic);
+        yf = cat(1,trial_data_test(trial_idx(1:num_trials)).yfit_full);
         
         if do_same_cells
             y = y(:,good_cells);
-            yf = yf(:,good_cells);
             yb = yb(:,good_cells);
+            yf = yf(:,good_cells);
         end
         
         r2 = zeros(size(y,2),2);
         for unit = 1:size(y,2)
-            r2(unit,1) = compute_rel_pseudo_r2(y(:,unit),yb(:,unit),yf(:,unit));
+            r2(unit,1) = compute_rel_pseudo_R2(y(:,unit),yb(:,unit),yf(:,unit));
         end
         
         y = cat(1,trial_data_test(trial_idx(end-num_trials:end)).([params.pred_array '_spikes']));
-        yf = cat(1,trial_data_test(trial_idx(end-num_trials:end)).yfit_full);
         yb = cat(1,trial_data_test(trial_idx(end-num_trials:end)).yfit_basic);
+        yf = cat(1,trial_data_test(trial_idx(end-num_trials:end)).yfit_full);
         
         if do_same_cells
             y = y(:,good_cells);
-            yf = yf(:,good_cells);
             yb = yb(:,good_cells);
+            yf = yf(:,good_cells);
         end
         
         for unit = 1:size(y,2)
-            r2(unit,2) = compute_rel_pseudo_r2(y(:,unit),yb(:,unit),yf(:,unit));
+            r2(unit,2) = compute_rel_pseudo_R2(y(:,unit),yb(:,unit),yf(:,unit));
         end
         
-        all_r2 = [all_r2, r2];
+        all_r2 = [all_r2; r2];
     end
     
     figure;
-    hist(mean(all_r2,1),-1:0.1:0.5);
+    subplot(2,1,1);
+    hist(all_r2(:,1),-1:0.1:0.5);
     axis('tight');
     set(gca,'Box','off','TickDir','out','FontSize',14);
+    
+    subplot(2,1,2);
+    hist(all_r2(:,2),-1:0.1:0.5);
+    axis('tight');
+    set(gca,'Box','off','TickDir','out','FontSize',14);
+    
     xlabel(which_metric);
     ylabel(count);
     title(outputSubdir);
 end
-
-
 
 
 

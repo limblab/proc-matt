@@ -1,7 +1,7 @@
 %% Prep datasets and get paths etc
 clear; clc; close all;
 dataSummary;
-trial_params;
+
 % Session parameters
 monkey = 'Chewie';
 task = 'CO';
@@ -11,10 +11,18 @@ date = '2016-10-07';
 units = [20,24,33; ...
     3,9,28];
 
+badneuron_params = struct( ...
+    'min_fr',0.3, ...
+    'do_shunt_check',1, ...
+    'use_trials',{{'epoch','BL'}});
+
 file = getFileDBidx(filedb, ...
     {'Task',task,'Perturbation',pert,'Monkey',monkey,'Date',date}, ...
     {'~(ismember(filedb.Monkey,''Mihili'') & datenum(filedb.Date) > datenum(''2015-01-01''))', ...
     'cellfun(@(x) all(ismember({''M1'',''PMd''},x)),filedb.Arrays)'});
+
+idx_start = {'idx_target_on', -10};
+idx_end   = {'idx_trial_end', -20};
 
 func_calls = [trial_func_calls, { ...
     {@getTDidx,'epoch',{'BL','AD'}}, ...
@@ -27,7 +35,7 @@ fname = fullfile(rootDir,TDDir,[filedb.Monkey{file} '_' filedb.Task{file} '_' fi
 
 %%
 [~,td] = getTDidx(trial_data,'epoch','BL');
-td1 = trimTD(td,{'idx_target_on',0},{'idx_target_on',60});
+td1 = trimTD(td,{'idx_target_on',-10},{'idx_target_on',50});
 td1 = trialAverage(td1,{'target_direction','epoch'},struct('do_stretch',false));
 td2 = trimTD(td,{'idx_go_cue',-25},{'idx_go_cue',25});
 td2 = trialAverage(td2,{'target_direction','epoch'},struct('do_stretch',false));
@@ -74,7 +82,7 @@ for a = 1:length(arrays)
         axis('tight');
         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[y_min,y_max],'YTick',[]);
         if j == 1
-            title('PMd','FontSize',16);
+            title(array,'FontSize',16);
         end
         
         subplot1((j-1)*7+3+4*(a-1)); hold all;
@@ -147,7 +155,7 @@ for a = 1:length(arrays)
         axis('tight');
         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[y_min,y_max],'YTick',[]);
         if j == 1
-            title('PMd','FontSize',16);
+            title(array,'FontSize',16);
         end
         
         subplot1((j-1)*7+3+4*(a-1)); hold all;

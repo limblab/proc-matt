@@ -47,7 +47,11 @@ for file = 1:length(filenames) % loop along sessions
             temp_idx = find(strcmpi(params.test_epochs,'AD'));
             good_idx = temp_metric(:,temp_idx(end),1) > pr2_cutoff;
         else % take the ones that are significant from cross validation
-            good_idx = temp_pr2(:,1) > pr2_cutoff & min(mean(results.pr2_full_cv,3),[],2) > pr2_cutoff & min(mean(results.pr2_basic_cv,3),[],2) > pr2_cutoff ;
+            good_idx = temp_pr2(:,1) > pr2_cutoff; 
+            good_idx = good_idx & min(mean(results.pr2_full_cv,3),[],2) > pr2_cutoff;
+            if any(any(any(~isnan(results.pr2_basic_cv))))
+                good_idx = good_idx & min(mean(results.pr2_basic_cv,3),[],2) > pr2_cutoff;
+            end
         end
         
         if do_good_cells
@@ -121,6 +125,7 @@ out_struct.e_pr2 = e_pr2;
 out_struct.good_cells = good_cells;
 out_struct.total_significant = total_significant;
 out_struct.total_cells = total_cells;
+out_struct.models = results.bl_model;
 
 if do_behavior
     out_struct.behavior = behavior;
