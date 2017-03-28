@@ -9,7 +9,7 @@ task = 'CO';
 pert = 'VR';
 date = '2016-10-06';
 
-units = [20,40,33; ...
+units = [20,24,33; ...
     3,9,28];
 
 badneuron_params = struct( ...
@@ -37,7 +37,7 @@ fname = fullfile(rootDir,TDDir,[filedb.Monkey{file} '_' filedb.Task{file} '_' fi
 [trial_data,params] = loadTDfiles(fname, func_calls{:});
 
 %%
-[~,td] = getTDidx(trial_data,'epoch','AD','range',[0.5 1]);
+[~,td] = getTDidx(trial_data,'epoch','BL');
 td = trimTD(td,{'idx_go_cue',-70},{'idx_go_cue',80});
 td = trialAverage(td,{'target_direction','epoch'},struct('do_stretch',false));
 
@@ -85,7 +85,7 @@ u = unique([td.target_direction]);
 td = [td1,td2];
 
 % process data
-td = trimTD(td,{'idx_go_cue',-60},{'idx_go_cue',80});
+td = trimTD(td,{'idx_go_cue',-70},{'idx_go_cue',80});
 td = trialAverage(td,{'target_direction','epoch'},struct('do_stretch',false));
 
 line_style = {'--','--','-','-'};

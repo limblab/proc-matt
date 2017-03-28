@@ -1,21 +1,21 @@
 clc; close all; clearvars -except ANALYSIS_NAME;
 dataSummary;
 
-ANALYSIS_NAME = 'PMdM1_glm_FF';
+ANALYSIS_NAME = 'PMdM1_glm_test';
 load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,'start_params.mat'),'filenames');
 
-filenames = filenames(cellfun(@(x) ~isempty(strfind(x,'Mihili')) | ~isempty(strfind(x,'Chewie')),filenames));
+%filenames = filenames(cellfun(@(x) ~isempty(strfind(x,'Mihili')) | ~isempty(strfind(x,'Chewie')),filenames));
 
-tasks = {'VR','FF'};
-models = {'pmd','pmd'};
+task = 'FF';
+models = {'potent','null'};
 which_metric = 'rpr2'; %'rpr2','pr2'
 
 cv_trials = 30;
-test_trials = {'AD',[1 90]};
+test_trials = {'AD',[1 80]};
 num_boots = 100;
 
-min_r2 = 0;
-min_fr = 5;
+min_r2 = 0.0;
+min_fr = 0;
 r2_op = 'min'; %'mean','min'
 
 do_norm = true;
@@ -38,41 +38,59 @@ plot_colors = [0    0.4470    0.7410; ...
 % temp_fn = filenames;
 figure; hold all;
 for iModel = 1:length(models)
-    fns = filenames(cellfun(@(x) ~isempty(strfind(x,['_' tasks{iModel} '_'])),filenames));
+    fns = filenames(cellfun(@(x) ~isempty(strfind(x,['_' task '_'])),filenames));
+    
     % cross validate data
-    LearningGLM_CrossValidate;
+%     LearningGLM_CrossValidate;
     
     % get the values for each test trial
-    r2=[];
+    [r2,cv_ref,cv_basic] = deal([]);
     for iFile = 1:length(fns)
         load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,[fns{iFile} '_eval.mat']),'trial_data');
+        load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,[fns{iFile} '_cv.mat']),'cv_results');
         ad_idx = getTDidx(trial_data,'epoch',test_trials{1},'range',test_trials{2});
         r2 = [r2, cat(1,trial_data(ad_idx).([models{iModel} '_' which_metric]))];
+        
+        temp = cv_results.([models{iModel}]).(which_metric);
+        if size(temp,3) > 1
+            temp = squeeze(mean(temp,3));
+        end
+        cv_ref = cat(1,cv_ref,temp);
+        
+        temp = cv_results.basic.pr2;
+        if size(temp,3) > 1
+            temp = squeeze(mean(temp,3));
+        end
+        cv_basic = cat(1,cv_basic,temp);
     end
     
-    % get the good cells
-    good_cells = true(size(r2,2),1);
-    fr_cells = fr_cv > min_fr & fr_test > min_fr;
-    good_cells = good_cells & fr_cells;
-
-    switch lower(r2_op)
-        case 'min'
-            good_cells = good_cells & cv_ref(:,1) > min_r2;
-            if strcmpi(which_metric,'rpr2')
-                good_cells = good_cells & cv_basic(:,1) > 0;
-            end
-        case 'mean'
-            good_cells = good_cells & mean(cv_ref,2) > min_r2;
-            if strcmpi(which_metric,'rpr2')
-                good_cells = good_cells & mean(cv_basic,2) > 0;
-            end
-    end
-    % use mean for normalizing etc
+    good_cells = min(cv_ref,[],2) > min_r2;
     cv_ref = mean(cv_ref,2);
     cv_basic = mean(cv_basic,2);
-    
+    % get the good cells
+%     good_cells = true(size(r2,2),1);
+%     fr_cells = fr_cv > min_fr & fr_test > min_fr;
+%     good_cells = good_cells & fr_cells;
+% 
+%     switch lower(r2_op)
+%         case 'min'
+%             good_cells = good_cells & cv_ref(:,1) > min_r2;
+% %             if strcmpi(which_metric,'rpr2')
+% %                 good_cells = good_cells & cv_basic(:,1) > 0;
+% %             end
+%         case 'mean'
+%             good_cells = good_cells & mean(cv_ref,2) > min_r2;
+% %             if strcmpi(which_metric,'rpr2')
+% %                 good_cells = good_cells & mean(cv_basic,2) > 0;
+% %             end
+%     end
+    % use mean for normalizing etc
+    fr_cv = 0;
+    fr_cells = 0;
+
     
     disp(['Total good cells: ' num2str(sum(good_cells)) ' / ' num2str(length(good_cells) - sum(~fr_cells)) ' (' num2str(length(good_cells)) ')']);
+    disp(['CV pR2: ' num2str(mean(cv_ref(good_cells))) ' +/- ' num2str(std(cv_ref(good_cells)))]);
     
     if do_diff
         r2 = r2 - repmat(cv_ref',size(r2,1),1);
@@ -86,12 +104,12 @@ for iModel = 1:length(models)
         cv_basic = cv_basic(good_cells);
     end
     cv_ref = cv_ref(good_cells);
-    fr_test = fr_test(good_cells);
-    fr_cv = fr_cv(good_cells);
+%     fr_test = fr_test(good_cells);
+%     fr_cv = fr_cv(good_cells);
     
     if rem_outliers
         r2(abs(r2) > 1e5) = NaN;
-        num_std = 3;
+        num_std = 10;
         %bad_idx = abs(r2) > repmat(num_std*std(r2,[],2),1,size(r2,2));
         bad_idx = abs(r2) > num_std*nanstd(reshape(r2,numel(r2),1));
         r2(bad_idx) = NaN;

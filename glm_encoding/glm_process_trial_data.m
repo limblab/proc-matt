@@ -24,7 +24,7 @@ end
 trial_data = getCommonUnits(trial_data);
 
 good_cells = cell(1,length(arrays));
-for array = 1:length(arrays);
+for array = 1:length(arrays)
     % make sure firing is significantly non-zero across the
     % whole session. Usually this means there is a sort problem
     % or there is noise and I lose a neuron, a real neuron
@@ -69,8 +69,6 @@ end, clear all_fr bl_fr num_blocks i array r s temp blocks;
 params.good_cells = good_cells;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Re-bin data
 if bin_size > 1
@@ -111,21 +109,29 @@ if do_rcb
     end
     
 elseif ~isempty(kin_signals) || do_all_history || do_self_history
-    error('FIX KINEMATIC SHIFT');
-    if unit_lags > 0
-        % Duplicate and shift
-        build_inputs = cell(1,2*(length(kin_signals) + length(arrays)));
-        for i = 1:length(arrays)
-            build_inputs{(i-1)*2+1} = [arrays{i} '_spikes'];
-            build_inputs{(i-1)*2+2} = unit_lags;
+    
+    for i = 1:length(kin_signals)
+        % shift kinematics by kin_lags backwards
+        for j = 1:length(trial_data)
+            temp = trial_data(j).(kin_signals{i});
+            trial_data(j).(kin_signals{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
         end
-        if ~isempty(kin_signals)
-            for i = 1:length(kin_signals)
-                build_inputs{2*length(arrays) + (i-1)*2+1} = kin_signals{i};
-                build_inputs{2*length(arrays) + (i-1)*2+2} = max(kin_lags);
-            end
-        end
-        trial_data = dupeAndShift(trial_data,build_inputs);
     end
+% % %     if unit_lags > 0
+% % %         error('FIX KINEMATIC SHIFT');
+% % %         % Duplicate and shift
+% % %         build_inputs = cell(1,2*(length(kin_signals) + length(arrays)));
+% % %         for i = 1:length(arrays)
+% % %             build_inputs{(i-1)*2+1} = [arrays{i} '_spikes'];
+% % %             build_inputs{(i-1)*2+2} = unit_lags;
+% % %         end
+% % %         if ~isempty(kin_signals)
+% % %             for i = 1:length(kin_signals)
+% % %                 build_inputs{2*length(arrays) + (i-1)*2+1} = kin_signals{i};
+% % %                 build_inputs{2*length(arrays) + (i-1)*2+2} = max(kin_lags);
+% % %             end
+% % %         end
+% % %         trial_data = dupeAndShift(trial_data,build_inputs);
+% % %     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

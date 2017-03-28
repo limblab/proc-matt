@@ -10,7 +10,7 @@ dataSummary;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % what to do
-remakeCDS = false; % if false, will skip CDS generating if file exists
+remakeCDS = true; % if false, will skip CDS generating if file exists
 remakeTD = false; % make trial data format that groups epochs
 remakeFileDB = false; % add CDS info to fileDB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,10 +19,10 @@ filedb = filedb_add(filedb);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % which session
-which_sessions = getFileDBidx(filedb, ...
-    {'Task',{'CO'}});%,'Perturbation',{'FF'},'Monkey',{'Chewie','Mihili'}}, ...
+% which_sessions = getFileDBidx(filedb,{'Date','2016-09-21'});
 %     {'~(ismember(filedb.Monkey,''Mihili'') & datenum(filedb.Date) > datenum(''2015-01-01''))', ...
 %     'cellfun(@(x) all(ismember({''M1'',''PMd''},x)),filedb.Arrays)'});
+which_sessions = find(strcmpi(filedb.Date,'2016-10-21') & strcmpi(filedb.Task,'CO'));
 sessions = [filedb.Monkey(which_sessions), filedb.Date(which_sessions), filedb.Task(which_sessions)];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

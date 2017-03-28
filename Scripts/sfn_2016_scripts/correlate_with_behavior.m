@@ -6,7 +6,7 @@ close all;
 dataSummary;
 
 basenames = {'trainad'};
-extranames = {'null_bl'};
+extranames = {'singleneurons'};
 array_models = {'PMd-M1'};
 
 sessions = { ...
@@ -28,9 +28,6 @@ sessions = { ...
     'Mihili','2014-02-17'; ...
     'Mihili','2014-02-18'; ...
     'Mihili','2014-03-07'; ...
-    'Mihili','2015-06-15'; ...
-    'Mihili','2015-06-16'; ...
-    'Mihili','2015-06-17'; ...
         };
 
 pert = 'FF';
@@ -39,12 +36,13 @@ dates = sessions(:,2);
 monkeys = unique(sessions(:,1));
 
 which_metric = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
-pr2_cutoff = 0.01;
+pr2_cutoff = 0.0;
 pr2_op = 'min'; % which operation for filtering ('min','max','mean','median')
 pr2_ad_check = false; % only keeps cells that predict in WO
+basic_pr2_check = false;
 
 plot_op = 'mean';
-group_size = 4;
+group_size = 5;
 
 do_norm = true;
 do_diff = true;
@@ -85,7 +83,7 @@ for idx_cond = 1:length(basenames)
     % build list of filenames
     filepaths = cell(1,length(filenames));
     for file = 1:length(filenames)
-        filepaths{file} = fullfile(rootDir,TDDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat']);
+        filepaths{file} = fullfile(rootDir,resultsDir,outputSubdir,[pert '-' array_models{idx_cond} '_' filenames{file} '.mat']);
     end
     
     out_struct = get_plot_metrics(filepaths, ...
@@ -97,14 +95,13 @@ for idx_cond = 1:length(basenames)
         'pr2_ad_check', pr2_ad_check, ...
         'do_good_cells',false, ...
         'do_behavior',true, ...
-        'filter_trials',true));
+        'basic_pr2_check',basic_pr2_check));
     
     cv = out_struct.cv;
     e_pr2 = out_struct.e_pr2;
     e_inds = out_struct.e_inds;
     good_cells = out_struct.good_cells;
     behavior = out_struct.behavior;
-    good_trials = out_struct.good_trials;
     
     for e = 1:length(epochs)
         % get the total behavioral change
@@ -116,7 +113,6 @@ for idx_cond = 1:length(basenames)
         
         v = e_pr2{e}(:,1:41);
         b = behavior{e}(:,1:41);
-        g = good_trials{e}(:,1:41);
         if ~isempty(v)
             if do_diff
                 v = v - repmat(mean(cv,2),1,size(v,2));
@@ -130,8 +126,8 @@ for idx_cond = 1:length(basenames)
                 disp('outliers');
             end
             
-            v(~g | bad_idx) = NaN;
-            b(~g | bad_idx) = NaN;
+            v(bad_idx) = NaN;
+            b(bad_idx) = NaN;
             
             % group together some number of trials
             if group_size > 1
@@ -228,8 +224,8 @@ ylabel('Difference in relative pseudo-r2','FontSize',14);
 m_x = zeros(1,size(err,2));
 s_x = zeros(2,size(err,2));
 for k = 1:size(err,2)
-    m_x(k) = nanmean(unique(err(:,k)),1);
-    s_x(:,k) = [m_x(k) - nanstd(unique(err(:,k)),[],1)./sqrt(size(unique(err(:,k)),1)); m_x(k) + nanstd(unique(err(:,k)),[],1)./sqrt(size(unique(err(:,k)),1))];
+    m_x(k) = nanmean(err(:,k),1);
+    s_x(:,k) = [m_x(k) - nanstd(err(:,k),[],1)./sqrt(size(err(:,k),1)); m_x(k) + nanstd(err(:,k),[],1)./sqrt(size(err(:,k),1))];
 end
 
 % m_x = nanmean(err,1);
@@ -267,7 +263,7 @@ set(gca,'Box','off','TickDir','out','FontSize',14);
 axis('tight');
 axis('square');
 % xlabel('% Adaptation','FontSize',14);
-xlabel('% Adaptation','FontSize',14);
+xlabel('Error (Deg)','FontSize',14);
 ylabel('Change in rpR2','FontSize',14);
 
 

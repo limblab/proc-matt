@@ -7,7 +7,7 @@ pr2_op = inparams.pr2_op;
 pr2_ad_check = inparams.pr2_ad_check;
 do_good_cells = inparams.do_good_cells;
 do_behavior = inparams.do_behavior;
-filter_trials = inparams.filter_trials;
+basic_pr2_check = inparams.basic_pr2_check;
 
 [cv,good_cells] = deal([]);
 % loop along files and group together
@@ -54,6 +54,17 @@ for file = 1:length(filenames) % loop along sessions
             end
         end
         
+        if basic_pr2_check
+            temp_basic_metric = results.pr2_basic;
+            temp_basic_metric(abs(temp_basic_metric) == Inf) = NaN;
+            temp_idx = find(strcmpi(params.test_epochs,'AD'));
+            
+            bins = 1:floor(length(temp_idx)/10):length(temp_idx);
+            for i = 1:length(bins)-1
+                good_idx = good_idx & nanmean(temp_basic_metric(:,temp_idx(bins(i):bins(i+1)),2),2) > pr2_cutoff;
+            end
+        end
+        
         if do_good_cells
             temp_metric = temp_metric(good_idx,:,:);
             temp_metric_cv = temp_metric_cv(good_idx,:,:);
@@ -80,37 +91,20 @@ for file = 1:length(filenames) % loop along sessions
         
         
         if do_behavior
+            dataSummary;
             % this is super hacky but it works. Fix it after SfN
-            [temp_path, temp_name, temp_ext]=fileparts(filenames{file});
-            temp_path = strsplit(temp_path,filesep);
-            new_path = temp_path{1};
-            for i = 2:length(temp_path)-1
-                new_path = [new_path, filesep, temp_path{i}];
-            end
-            load(fullfile(new_path,[temp_name(11:end) temp_ext]),'trial_data');
-            if isfield(trial_data(1),'result')
-                trial_data = trial_data(getTDidx(trial_data,'result',{'R'}));
-            end
+            [~, temp_name, temp_ext]=fileparts(filenames{file});
+            load(fullfile(rootDir,TDDir,[temp_name(11:end) temp_ext]),'trial_data');
+
+            [~,td] = getTDidx(trial_data,'result','R');
             
-            if filter_trials
-                [~,bad_idx] = filterTrials(trial_data);
-                good_trial_idx = ~bad_idx;
-            end
-            
-            metric = abs(get_learning_metrics(trial_data, 'angle')*180/pi);
-            %metric = abs(get_learning_metrics(trial_data, 'corr'));%*180/pi);
+            metric = abs(getLearningMetrics(td, struct('which_metric','angle'))*180/pi);
             
             for e = 1:length(epochs)
                 if file == 1
                     behavior{e} = repmat(metric(e_inds{e})',size(temp_metric_cv,1),1);
-                    if filter_trials
-                        good_trials{e} = repmat(good_trial_idx(e_inds{e}),size(temp_metric_cv,1),1);
-                    end
                 else
                     behavior{e} = [behavior{e}(:,1:length(e_inds{e})); repmat(metric(e_inds{e})',size(temp_metric_cv,1),1)];
-                    if filter_trials
-                        good_trials{e} = [good_trials{e}(:,1:length(e_inds{e})); repmat(good_trial_idx(e_inds{e}),size(temp_metric_cv,1),1)];
-                    end
                 end
             end
         end
@@ -129,9 +123,6 @@ out_struct.models = results.bl_model;
 
 if do_behavior
     out_struct.behavior = behavior;
-    if filter_trials
-        out_struct.good_trials = good_trials;
-    end
 end
 
 out_struct.params = params;

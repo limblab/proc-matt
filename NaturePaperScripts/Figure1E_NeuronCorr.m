@@ -5,8 +5,8 @@ dataSummary;
 % Session parameters
 monkey = 'Chewie';
 task = 'CO';
-pert = 'FF';
-date = '2016-10-07';
+pert = 'VR';
+date = '2016-10-06';
 
 file = getFileDBidx(filedb, ...
     {'Task',task,'Perturbation',pert,'Monkey',monkey,'Date',date}, ...
@@ -28,7 +28,7 @@ badneuron_params_m1 = struct( ...
 
 badneuron_params_pmd = struct( ...
     'arrays','PMd', ...
-    'min_fr',5, ...
+    'min_fr',6, ...
     'do_shunt_check',0, ...
     'use_trials',{{'epoch',{'BL','AD'}}});
 
@@ -87,8 +87,50 @@ ylabel('Adaptation','FontSize',14);
 subplot1(4); imagesc(flipud(pmd_ad(pmd_bl_sort,pmd_bl_sort))); axis('tight');
 axis('square'); set(gca,'Box','off','TickDir','out','FontSize',14,'YTick',[],'XTick',[]);
 
-%% Now plot correlations against each other
+
+%% get null and potent spaces
 if 0
+td = appendTDs(trimTD(td_s,{'idx_target_on',0},{'idx_target_on',50}),trimTD(td_s,{'idx_go_cue',-0},{'idx_go_cue',40}));
+
+pn_params = struct( ...
+    'in_signals','PMd_spikes', ...
+    'out_signals','M1_spikes', ...
+    'in_dims',16, ...
+    'out_dims',8, ...
+    'use_trials',getTDidx(td,'epoch','BL'));
+[td,pn_info] = getPotentSpace(td,pn_params);
+
+% get weight of each PMd neuron onto the null and potent spaces
+w_potent = pn_info.w_in(:,1:16)*pn_info.V_potent;
+w_null = pn_info.w_in(:,1:16)*pn_info.V_null;
+
+% get change in correlation after larning
+dr = pmd_ad - pmd_bl;
+for i = 1:size(dr,1), dr(i,i) = NaN; end
+dr = nanmean(dr,2);
+
+% define null/potent index
+np_ind = (rms(w_potent,2)-rms(w_null,2))./(rms(w_potent,2)+rms(w_null,2));
+figure; hold all;
+plot(np_ind,dr,'o','LineWidth',2);
+axis('square');
+set(gca,'Box','off','TickDir','out','FontSize',14);
+
+V = axis;
+x_min = -max(abs(V(1:2)));
+x_max = max(abs(V(1:2)));
+y_min = -max(abs(V(3:4)));
+y_max = max(abs(V(3:4)));
+
+plot([0 0],[y_min,y_max],'k--');
+plot([x_min,x_max],[0 0]);
+set(gca,'XLim',[x_min x_max],'YLim',[y_min y_max]);
+xlabel('Null/Potent Index','FontSize',14);
+ylabel('Change in correlation','FontSize',14);
+end
+
+%% Now plot correlations against each other
+if 1
 arrays = {'M1_spikes'};
 params_corr = struct('signals',{arrays},'cluster_order',false,'do_norm',false,'cluster_arrays',false);
 [m1_bl,m1_bl_sort] = pairwiseCorr(td1,params_corr);
@@ -131,3 +173,7 @@ plot(reshape(m1pmd_bl,1,numel(m1pmd_bl)),reshape(m1pmd_ad,1,numel(m1pmd_ad)),'k.
 axis('square');
 set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-1 1],'YLim',[-1 1]);
 end
+
+
+
+

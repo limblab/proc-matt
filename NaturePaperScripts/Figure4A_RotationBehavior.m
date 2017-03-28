@@ -66,12 +66,12 @@ for monkey = monkeys
     for e = 1:length(epochs)
         %m = squeeze(err(:,:,e))';
         m = cat(2,err{:,e});
-        m = moving_average(m,2);
+        m = moving_average(m,4);
         
         subplot(1,length(epochs),e); hold all;
         %plot(squeeze(err(:,:,e))','-','Color',[0.4,0.4,0.4]);
         plot(m*180/pi,'-','Color',[0.6,0.6,0.6]);
-        plot(mean(m,2)*180/pi,'k-','LineWidth',3);
+        plot(median(m,2)*180/pi,'k-','LineWidth',3);
         axis('tight');
         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-45 45]);
     end
@@ -82,8 +82,9 @@ end
 %% MAKE PINWHEEL PLOTS
 % get time-warped position traces for BL, early AD, late AD
 
+monkeys = {'Chewie','Mihili'};
 monkey_files = [4,2];
-num_reaches = 1; % first/last of this many to each target
+num_reaches = 3; % first/last of this many to each target
 
 for m = 1:length(monkeys)
     monkey = monkeys{m};
@@ -104,7 +105,7 @@ for m = 1:length(monkeys)
     
     u = unique([td.target_direction]);
     for targ = 1:length(u)
-        td_temp = trialAverage(td(getTDidx(td,'epoch','BL','target_direction',u(targ))), ...
+        td_temp = trialAverage(td(getTDidx(td,'epoch','BL','target_direction',u(targ),'range',{'last',num_reaches})), ...
             'target_direction',struct('do_stretch',true,'num_samp',1000));
         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'k-','LineWidth',2);
         
@@ -115,14 +116,16 @@ for m = 1:length(monkeys)
             'target_direction',struct('do_stretch',true,'num_samp',1000));
         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'b--','LineWidth',2);
         
-        %         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'first',num_reaches})), ...
-        %             'target_direction',struct('do_stretch',true,'num_samp',1000));
-        %         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r-','LineWidth',2);
-        %         td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'last',num_reaches})), ...
-        %             'target_direction',struct('do_stretch',true,'num_samp',1000));
-        %         plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r--','LineWidth',2);
+        td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'first',num_reaches})), ...
+            'target_direction',struct('do_stretch',true,'num_samp',1000));
+        plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r-','LineWidth',2);
+        %                 td_temp = trialAverage(td(getTDidx(td,'epoch','WO','target_direction',u(targ),'range',{'last',num_reaches})), ...
+        %                     'target_direction',struct('do_stretch',true,'num_samp',1000));
+        %                 plot(td_temp.pos(:,1)-pos_offsets(1),td_temp.pos(:,2)-pos_offsets(2),'r--','LineWidth',2);
     end
 end
 
+set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-10 10],'YLim',[-10,10]);
+axis('square');
 
 

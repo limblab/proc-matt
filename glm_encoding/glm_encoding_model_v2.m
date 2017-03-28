@@ -29,7 +29,7 @@
 %%% Differences of current trial_data from old:
 %       Old one cut trials < 0.1 ms
 %       Old one cut trials where the movement or peak weren't found
-%       
+%
 
 clear;
 clc;
@@ -43,34 +43,31 @@ params_comment = 'training on AD data with 50 msec bins';
 params_file = '';% optionally give .mat file containing params to use
 % Must be in the outputSubdir
 
+%       'Chewie','2016-09-19'; ...
+          
 sessions = { ...
-    'Chewie','2016-09-09'; ... % VR
-    'Chewie','2016-09-12'; ...
-    'Chewie','2016-09-14'; ...
-    'Chewie','2016-10-06'; ...
-%     'Mihili','2014-03-03'; ...
-%     'Mihili','2014-03-04'; ...
-%     'Mihili','2014-03-06'; ...
 %     'Chewie','2016-09-15'; ... % CF
+%     'Chewie','2016-09-21'; ...
 %     'Chewie','2016-10-05'; ...
-%     'Chewie','2016-10-07'; ...
+    'Chewie','2016-10-07'; ...
 %     'Chewie','2016-10-11'; ...
 %     'Mihili','2014-02-03'; ...
 %     'Mihili','2014-02-17'; ...
 %     'Mihili','2014-02-18'; ...
 %     'Mihili','2014-03-07'; ...
-%         'MrT','2013-08-19'; ... % CF
-%         'MrT','2013-08-21'; ...
-%         'MrT','2013-08-23'; ...
-%         'MrT','2013-09-03'; ... %VR
-%         'MrT','2013-09-05'; ...
-%         'MrT','2013-09-09'; ...
+%     'Chewie','2016-09-09'; ... % VR
+%     'Chewie','2016-09-12'; ...
+%     'Chewie','2016-09-14'; ...
+%     'Chewie','2016-10-06'; ...
+%     'Mihili','2014-03-03'; ...
+%     'Mihili','2014-03-04'; ...
+%     'Mihili','2014-03-06'; ...
     };
 
 
 monkeys = unique(sessions(:,1));
 tasks = {'CO'};
-perts = {'VR'};
+perts = {'FF'};
 dates = sessions(:,2);
 % {COVARIATE, PREDICTED}, will loop along rows
 % array_pairs = {'PMd','M1';'M1','M1';'PMd','PMd'};
@@ -83,18 +80,19 @@ if isempty(params_file)
     
     result_codes           = {'R'}; % which trials to include
     
-    training_data          = {'AD',[0.5 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
-    testing_data           = {'BL','all'; ... % should match this to be proportion or trial range based on training_data
-                              'AD',[0 0.5]; ...
-                              'WO','all'};
+    training_data          = {'BL',[0.5 1]}; % either proportion range e.g. [0 0.5] or # trails from start (100) or end (-100)
+    %     testing_data           = {'BL','all'; ... % should match this to be proportion or trial range based on training_data
+    %         'AD',[0 0.5]; ...
+    %         'WO','all'};
+    testing_data           = {'AD',[0 0.5]};
     block_size_testing     = 1; % size of blocks in # trials for AD/WO
     % note: can change this and still reload CV
     
     % how to truncate trials {idx name, number of bins after}
     train_start_idx        = {'idx_target_on',0}; %{'idx_target_on',-4}
-    train_end_idx          = {'idx_trial_end',-2}; %{'idx_go_cue',4}
+    train_end_idx          = {'idx_trial_end',0}; %{'idx_go_cue',4}
     test_start_idx         = {'idx_target_on',0}; % NOTE: CAN CHANGE THESE
-    test_end_idx           = {'idx_trial_end',-2}; %   AND STILL RELOAD CV
+    test_end_idx           = {'idx_trial_end',0}; %   AND STILL RELOAD CV
     %   NOTE: this is after rebinning at the moment
     
     cv_folds               = 10; % how many folds for cross-validation
@@ -102,14 +100,14 @@ if isempty(params_file)
     
     block_size_fr_test     = 100;   % how many trials to group for FR test
     fr_test_alpha          = 1e-3; % p value cut off for t-test
-    fr_min                 = 0.3; % minimum session-wide spiking for inclusion
+    fr_min                 = 0.15; % minimum session-wide spiking for inclusion
     
     do_lasso               = false;  % if you want to regularize
     lasso_lambda           = 0.0083; % lambda parameter for lasso
     lasso_alpha            = 0.01;   % alpha parameter for lasso
     
     do_pca                 = false; % false, 'pca', 'potent', 'null'
-    smooth_pca_proj_spikes = true;
+    smooth_pca_proj_spikes = false;
     center_pca             = true;
     pca_dims               = struct('M1',1:8,'PMd',1:16); % ...'ARRAY','all' or specify which dimensions, e.g. 1:30...
     potent_trials          = {'epoch','bl'};
@@ -122,8 +120,9 @@ if isempty(params_file)
     rcb_b                  = 0.1;
     %   NOTE: this is after rebinning at the moment
     
-    kin_signals            = {'vel','speed'}; % names of kinematic covariates
+    kin_signals            = {'pos','vel','speed'}; % names of kinematic covariates
     kin_lags               = 3; % how many bins to lag (if ~do_rcb) or how many raised cosines (if do_rcb)
+    filter_velocity        = false;
     %   NOTE: this is after rebinning at the moment
     
     num_bootstraps         = 1000; % how many resamples for R2
@@ -186,8 +185,8 @@ for idx_pert = 1:length(perts)
         
         for idx_file = 1:length(use_files)
             disp(['File ' num2str(idx_file) ' of ' num2str(length(use_files)) '...'])
-%             close all;
-%             figure;
+            %             close all;
+            %             figure;
             
             epochs = filedb.Epochs{use_files(idx_file)};
             
@@ -229,6 +228,7 @@ for idx_pert = 1:length(perts)
             end
             params.result_codes = result_codes;
             params.kin_signals = kin_signals;
+            params.filter_velocity = filter_velocity;
             params.train_start_idx = train_start_idx;
             params.train_end_idx = train_end_idx;
             cv_params = params; % these will be saved separately
@@ -255,10 +255,30 @@ for idx_pert = 1:length(perts)
             load(fullfile(rootDir,TDDir,[filename '.mat']));
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-%             trial_data = removeBadTrials(trial_data,struct('ranges', ...
-%                 {{'idx_go_cue','idx_movement_on',[10,40]; ...
-%                 'idx_movement_on','idx_peak_speed',[10,50]; ...
-%                 'idx_peak_speed','idx_trial_end',[60,100]}}));
+            
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Filter velocity traces at 14 Hz
+            if filter_velocity
+            if strcmpi(pert,'FF'), disp('FILTERING VELOCITY!'); end
+            for trial = 1:length(trial_data)
+                if strcmpi(trial_data(trial).epoch,'AD') && strcmpi(pert,'FF')
+                    fs = 100;
+                    Wn = 14*2/fs;
+                    deg = 3;
+                    [B,A] = butter(deg,Wn,'low');
+                    trial_data(trial).vel(:,1) = filter(B,A,trial_data(trial).vel(:,1));
+                    trial_data(trial).vel(:,2) = filter(B,A,trial_data(trial).vel(:,2));
+                    % integrate to get new position
+%                     trial_data(trial).pos(:,1) = cumtrapz(trial_data(trial).vel(:,1));
+%                     trial_data(trial).pos(:,2) = cumtrapz(trial_data(trial).vel(:,2));
+                end
+            end
+            end
+            
+            trimming_weird_trials;
+            
+
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % will save cross validated BL predictions so I don't have to
@@ -279,18 +299,23 @@ for idx_pert = 1:length(perts)
             end
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
+            if strcmpi(filedb.Monkey{use_files(idx_file)},'Mihili')
+                [~,trial_data] = getTDidx(trial_data,'result',result_codes);
+            end
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % bin and prepare signals
             [trial_data, params] = glm_process_trial_data(trial_data,params);
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % filter trials and partition testing/training sets
+            [~,trial_data] = getTDidx(trial_data,'result',result_codes);
+            
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             disp('Duplicating trial data for test set')
             trial_data_test = trial_data;
             trial_data_test = rmfield(trial_data_test,getTDfields(trial_data_test,'time'));
             
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % filter trials and partition testing/training sets
-            [~,trial_data] = getTDidx(trial_data,'result',result_codes);
             
             if length(training_data{2}) > 1 % use percentages
                 [train_trials,test_trials, test_epochs] = deal([]);
@@ -385,12 +410,12 @@ for idx_pert = 1:length(perts)
                         'out_dims',max(params.pca_dims.(pred_array)), ...
                         'do_smoothing',false, ...
                         'use_trials',{potent_trials});
-                        
+                    
                     [~,temp] = getPotentSpace(trial_data,pn_params);
                     params.pca_w = temp.w_in;
                     params.pca_mu = temp.mu_in;
                     params.V_potent = temp.V_potent;
-                    params.V_null = temp.V_null;                    
+                    params.V_null = temp.V_null;
                 end
             end
             
@@ -431,9 +456,9 @@ for idx_pert = 1:length(perts)
                         b_basic = [s.Intercept; b];
                     end
                 else
-
+                    
                     [b_full,d_full,s_full] = glmfit(x_full,y,'poisson');
-
+                    
                     if ~isempty(x_basic)
                         [b_basic,d_basic,s_basic] = glmfit(x_basic,y,'poisson');
                     else
@@ -522,6 +547,7 @@ for idx_pert = 1:length(perts)
                     
                     if block_size_testing == 1
                         % add prediction to trial_data
+                        trial_data_test(test_trials(e,:)).y(:,unit) = y;
                         trial_data_test(test_trials(e,:)).x_full = x_full;
                         trial_data_test(test_trials(e,:)).yfit_full(:,unit) = yfit_full;
                         if ~isempty(b_basic)
@@ -538,26 +564,9 @@ for idx_pert = 1:length(perts)
                         rpr2(unit,e,:) = prctile(compute_rel_pseudo_R2(y(bs),yfit_basic(bs),yfit_full(bs)),[2.5 97.5]);
                         pr2_basic(unit,e,:) = prctile(compute_pseudo_R2(y(bs),yfit_basic(bs),mean(y)),[2.5 97.5]);
                     end
-                    
-                    %                     rpr2(unit,e,:) = bootci(num_bootstraps,{@compute_rel_pseudo_R2,y, yfit_basic', yfit_full'});
-                    %                     pr2_full(unit,e,:) = bootci(num_bootstraps,{@compute_pseudo_R2,y, yfit_full', mean(pred_fr(:,i))});
-                    %                     pr2_basic(unit,e,:) = bootci(num_bootstraps,{@compute_pseudo_R2,y, yfit_basic', mean(pred_fr(:,i))});
-                    
-                    if 0
-                        figure;
-                        hold all;
-                        plot(y);
-                        plot(yfit_full);
-                        plot(yfit_basic);
-                        legend({['rpr2=' num2str(mean(rpr2(unit,e,:)))],['pr2_f=' num2str(mean(pr2_full(unit,e,:)))],['pr2_b=' num2str(mean(pr2_basic(unit,e,:)))]});
-                        pause;
-                        close all;
-                    end
+
                 end
                 toc;
-%                 subplot(1,2,1); hold all; plot(mean(pr2_full(unit,:,:),3));
-%                 subplot(1,2,2); hold all; plot(mean(rpr2(unit,:,:),3));
-%                 drawnow;
             end % end neuron loop
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

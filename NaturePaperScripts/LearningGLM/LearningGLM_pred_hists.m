@@ -1,17 +1,18 @@
-ANALYSIS_NAME = 'PMdM1_glm_FF';
-
 clc; close all; clearvars -except ANALYSIS_NAME;
+ANALYSIS_NAME = 'PMdM1_glm_DECENT';
 dataSummary;
 load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,'start_params.mat'));
 
-filenames = filenames(cellfun(@(x) ~isempty(strfind(x,'_FF_')),filenames));
+ANALYSIS_NAME = 'PMdM1_glm_DECENT';
+
+fns = filenames(cellfun(@(x) ~isempty(strfind(x,'_FF_')),filenames));
 
 which_metric = 'rpr2';
 
 test_trials = {'AD',[1 10],[71,80]};
 cv_trials = {'AD',[81 90]};
-min_r2 = 0.01;
-min_fr = 3;
+min_r2 = 0.0;
+min_fr = 0;
 r2_op = 'mean';
 
 do_diff = true;
@@ -19,7 +20,7 @@ do_norm = true;
 rem_outliers = true;
 models = {'pmd'};
 
-num_boots = 100;
+num_boots = 1000;
 
 results = repmat(struct('good_cells',[],'cv',[],'pr2',[]),1,length(models));
 for iModel = 1:length(models)
@@ -27,12 +28,12 @@ for iModel = 1:length(models)
     LearningGLM_CrossValidate;
     
     [r2] = deal([]);
-    for iFile = 1:length(filenames)
+    for iFile = 1:length(fns)
         tic;
         
         
-        disp(['Loading File ' num2str(iFile) ' of ' num2str(length(filenames)) '.']);
-        load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,[filenames{iFile} '_fit.mat']));
+        disp(['Loading File ' num2str(iFile) ' of ' num2str(length(fns)) '.']);
+        load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,[fns{iFile} '_fit.mat']));
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Evaluate performance of models

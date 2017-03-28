@@ -130,13 +130,15 @@ end
 if ~isempty(kin_signals)
     if do_rcb
         kin_lags = unit_lags;
-        x_kin = [x_kin, cov_kin];
+        %x_kin = [x_kin, cov_kin];
     end
     for lag = 1:length(kin_lags)
         if kin_lags(lag) == 0
             x_kin = [x_kin, cov_kin];
-        else
+        elseif ~isempty(cov_kin_shift)
             x_kin = [x_kin, cov_kin_shift(:,1+(kin_lags(lag)-1)*size(cov_kin,2):kin_lags(lag)*size(cov_kin,2))];
+        else
+            disp('No shifted kinematics. Just making sure you know this.');
         end
     end
 end
