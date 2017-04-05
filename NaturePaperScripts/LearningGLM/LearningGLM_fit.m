@@ -14,6 +14,19 @@ for iFile = 1:length(session_idx)
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Do that thing where I lag kinematic signals
+    if kin_lags > 0
+        for trial = 1:length(trial_data)
+            for i = 1:length(basic_inputs)
+                temp = trial_data(trial).(basic_inputs{i});
+                trial_data(trial).(basic_inputs{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
+            end
+        end
+    end
+    
+    trial_data = trimTD(trial_data,idx_start,idx_end);
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Get PC projections
     if any(ismember(model_names,{'potent','null','m1_pca','pmd_pca'}))
         % get dimensionality if desired
@@ -49,8 +62,9 @@ for iFile = 1:length(session_idx)
         
         td = trial_data;
         
-        %trial_data = sqrtTransform(trial_data,{'M1_spikes','PMd_spikes'});
-        %trial_data = smoothSignals(trial_data,struct('signals',{{'M1_spikes','PMd_spikes'}},'kernel_SD',0.1));
+        % project square root transformed spikes, but not smoothed for now
+        trial_data = sqrtTransform(trial_data,{'M1_spikes','PMd_spikes'});
+        %%%trial_data = smoothSignals(trial_data,struct('signals',{{'M1_spikes','PMd_spikes'}},'kernel_SD',0.1));
         
         potentNull_params = struct( ...
             'in_signals',[in_array '_spikes'], ...
@@ -58,7 +72,7 @@ for iFile = 1:length(session_idx)
             'in_dims',temp_in_dims, ...
             'out_dims',temp_out_dims, ...
             'use_trials',{{'epoch','BL'}}, ...
-            'sqrt_transform',true, ...
+            'sqrt_transform',false, ...
             'do_smoothing',true, ...
             'kernel_SD',pn_kernel_SD);
         trial_data = getPotentSpace(trial_data,potentNull_params);
@@ -68,23 +82,7 @@ for iFile = 1:length(session_idx)
             trial_data(trial).M1_spikes = td(trial).M1_spikes;
             trial_data(trial).PMd_spikes = td(trial).PMd_spikes;
         end, clear td;
-        
-        trial_data = sqrtTransform(trial_data,{'PMd_spikes'});
     end
-    
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%% Do that thing where I lag kinematic signals
-    if kin_lags > 0
-    for trial = 1:length(trial_data)
-        for i = 1:length(basic_inputs)
-            temp = trial_data(trial).(basic_inputs{i});
-            trial_data(trial).(basic_inputs{i}) = [temp(kin_lags+1:end,:); NaN(kin_lags,size(temp,2))];
-        end
-    end
-    end
-    
-    trial_data = trimTD(trial_data,idx_start,idx_end);
     
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

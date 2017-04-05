@@ -45,7 +45,7 @@ switch lower(params.type)
             % plot limb segments
             plot([0,L1*cos(sd.angles(t,1))],[0,L1*sin(sd.angles(t,1))],'k-','LineWidth',2);
             plot(L1*cos(sd.angles(t,1))+[0,L2*cos(sd.angles(t,1)+sd.angles(t,2))],L1*sin(sd.angles(t,1))+[0,L2*sin(sd.angles(t,1)+sd.angles(t,2))],'k-','LineWidth',2);
-            set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.15,0.15],'YLim',[0 0.30]); axis('square');
+            set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.15,0.15],'YLim',[0 0.50]); axis('square');
             pause(10/1000);
             clf;
         end
@@ -68,7 +68,7 @@ switch lower(params.type)
             plot([0,L1*cos(sd.angles(t,1))],[0,L1*sin(sd.angles(t,1))],'k-','LineWidth',2,'Color',plot_colors(t-(params.idx_start-1),:));
             plot(L1*cos(sd.angles(t,1))+[0,L2*cos(sd.angles(t,1)+sd.angles(t,2))], L1*sin(sd.angles(t,1))+[0,L2*sin(sd.angles(t,1)+sd.angles(t,2))],'k-','LineWidth',2,'Color',plot_colors(t-(params.idx_start-1),:));
         end
-        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.21,0.21],'YLim',[-0.03 0.21]); axis('square');
+        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[-0.21,0.21],'YLim',[-0.03 0.5]); axis('square');
         set(gca,'YTickLabel',cellfun(@(x) 100*(str2num(x) - params.origin_pos(2)/100),get(gca,'YTickLabel')))
         set(gca,'XTickLabel',100*cellfun(@(x) str2num(x),get(gca,'XTickLabel')))
         xlabel('X Position (cm)','FontSize',14);

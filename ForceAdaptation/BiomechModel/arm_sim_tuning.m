@@ -32,7 +32,7 @@ for iTrial = 1:length(sim_data)
     end
 end
 bad_trials = isnan(theta)';
-theta = binAngles(theta,angle_bin_size);
+theta = bin_angles(theta,angle_bin_size);
 
 clear tc_data;
 
@@ -82,8 +82,7 @@ end
 %% Do sliding window tuning
 if do_sliding_window_bullshit
     coordinate_frame = 'movement';
-    blocks = {'BL',[0 1]; 'AD',[0 1]};
-    disp('HEY DOING WEIRD BLOCK THING FOR DUPLICATING BASELINE FUCK');
+    blocks = {'BL',[0 1]; 'AD',[0.33 1]};
     angle_bin_size = 45*pi/180;
     time_delay = 0;
     hold_time = 50;
@@ -140,7 +139,7 @@ if do_sliding_window_bullshit
             
             bad_trials = isnan(theta)';
             
-            theta = binAngles(theta,angle_bin_size);
+            theta = bin_angles(theta,angle_bin_size);
             
             for j = 1:length(blocks)
                 idx = find(strcmpi({trial_data.epoch},blocks{j,1}) & ~bad_trials);

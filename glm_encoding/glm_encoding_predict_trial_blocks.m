@@ -7,10 +7,10 @@ sessions = { ...
     'Chewie','2016-10-05'; ...
     'Chewie','2016-10-07'; ...
     'Chewie','2016-10-11'; ...
-    'Mihili','2014-02-03'; ...
-    'Mihili','2014-02-17'; ...
-    'Mihili','2014-02-18'; ...
-    'Mihili','2014-03-07'; ...
+%     'Mihili','2014-02-03'; ...
+%     'Mihili','2014-02-17'; ...
+%     'Mihili','2014-02-18'; ...
+%     'Mihili','2014-03-07'; ...
     'Chewie','2016-09-09'; ... % VR
     'Chewie','2016-09-12'; ...
     'Chewie','2016-09-14'; ...
@@ -21,8 +21,8 @@ sessions = { ...
     };
 
 basenames = {'trainad','trainad'};
-extranames = {'potent_NEW','null_NEW'};
-array_models = {'PMd-M1','PMd-M1'};
+extranames = {'singleneurons','singleneurons'};
+array_models = {'M1-M1','PMd-M1'};
 
 
 pert = 'FF';
@@ -32,9 +32,10 @@ monkeys = unique(sessions(:,1));
 
 
 which_metric = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
-pr2_cutoff = 0.01;
+pr2_cutoff = 0.0;
 pr2_op = 'min'; % which operation for filtering ('min','max','mean','median')
 do_same_cells = false;
+basic_pr2_check = false;
 
 
 test_trials = {'AD',[0 0.5]};
@@ -82,7 +83,8 @@ if do_same_cells
                 'pr2_ad_check', pr2_ad_check, ...
                 'do_good_cells',true, ...
                 'do_behavior',false, ...
-                'filter_trials',filter_trials));
+                'filter_trials',filter_trials, ...
+                'basic_pr2_check',basic_pr2_check));
             
             good_cells = [good_cells; out_struct.good_cells];
         end
@@ -119,7 +121,8 @@ for idx_cond = 1:length(basenames)
             'pr2_ad_check', false, ...
             'do_good_cells',~do_same_cells, ...
             'do_behavior',false, ...
-            'filter_trials',false));
+            'filter_trials',false, ...
+                'basic_pr2_check',basic_pr2_check));
         
         params = out_struct.params;
         
@@ -138,7 +141,7 @@ for idx_cond = 1:length(basenames)
         % e.g. trained on 0.5->1 of AD
         trial_idx = getTDidx(trial_data_test,'epoch',test_trials{1},'range',test_trials{2});
         
-        y = cat(1,trial_data_test(trial_idx(1:num_trials)).([params.pred_array '_spikes']));
+        y = cat(1,trial_data_test(trial_idx(1:num_trials)).y);
         yb = cat(1,trial_data_test(trial_idx(1:num_trials)).yfit_basic);
         yf = cat(1,trial_data_test(trial_idx(1:num_trials)).yfit_full);
         
@@ -153,7 +156,7 @@ for idx_cond = 1:length(basenames)
             r2(unit,1) = compute_rel_pseudo_R2(y(:,unit),yb(:,unit),yf(:,unit));
         end
         
-        y = cat(1,trial_data_test(trial_idx(end-num_trials:end)).([params.pred_array '_spikes']));
+        y = cat(1,trial_data_test(trial_idx(end-num_trials:end)).y);
         yb = cat(1,trial_data_test(trial_idx(end-num_trials:end)).yfit_basic);
         yf = cat(1,trial_data_test(trial_idx(end-num_trials:end)).yfit_full);
         
@@ -182,7 +185,6 @@ for idx_cond = 1:length(basenames)
     set(gca,'Box','off','TickDir','out','FontSize',14);
     
     xlabel(which_metric);
-    ylabel(count);
     title(outputSubdir);
 end
 

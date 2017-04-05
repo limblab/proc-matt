@@ -182,7 +182,7 @@ for iAxis = 1:length(axisNames)
         
         % get direction of perturbation to flip the clockwise ones to align
         if flipClockwisePerts
-            pdDir = 'Processed';
+            pdDir = '';
             % gotta hack it
             dataPath = fullfile(root_dir,doFiles{iFile,1},pdDir,doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
@@ -225,8 +225,21 @@ for iAxis = 1:length(axisNames)
         end
         
         % first column is PD, second column is MD
-        cellClasses{iFile} = c(whichBlock).classes(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes,1);
-        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes,:);
+        tuned_idx = all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes;
+        
+        if sComp.highSNR
+            data = loadResults(root_dir,doFiles(iFile,:),'data','M1','BL');
+            cell_snr = zeros(size(data.sg,1),1);
+            for unit = 1:size(data.sg,1)
+                wf = data.units(unit).wf;
+                %istuned(unit,1) = max(rms(wf'))/mean(std(double(wf(1:5,:)'))) >= waveSNR;
+                sig = max(mean(wf'))-min(mean(wf'));
+                cell_snr(unit) = sig / (2*mean(std(double(wf'))));
+            end
+            tuned_idx = tuned_idx & cell_snr > 6;
+        end
+        cellClasses{iFile} = c(whichBlock).classes(tuned_idx,1);
+        tunedCells = c(whichBlock).sg(tuned_idx,:);
         
         sg_bl = t(classifierBlocks(1)).sg;
         sg_ad = t(classifierBlocks(2)).sg;

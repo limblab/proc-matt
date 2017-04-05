@@ -19,7 +19,7 @@ close all;
 %   8: Cell classification summary
 %   9: trial number
 %  10: PD change periods for SfN
-whichScript = 3;
+whichScript = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Now a bunch of parameters and necessary info
@@ -73,13 +73,14 @@ sComp.arrays  = {useArray, useArray};
 sComp.reassignOthers = false; % reassign "Other" type cell classes as Dynamic/Memory (only for scatter)
 sComp.doAbs = false; %take absolute value of differences for each cell
 sComp.doPercent = true; %whether to do MD/BO/FR as a percentage
+sComp.highSNR = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % For sliding-window tuning in CO task and also slow/fast movements
 slidingParams.metric = 'PD';
 slidingParams.doAvg = true; % do average across sessions (mainly for group scatter plot)
 slidingParams.useVel = false; % use velocity instead of measured force
-slidingParams.useMasterTuned = true; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
+slidingParams.useMasterTuned = false; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
 slidingParams.doAbs = true; % take absolute of difference between epochs
 slidingParams.doMD = false;
 slidingParams.doMDNorm = true;

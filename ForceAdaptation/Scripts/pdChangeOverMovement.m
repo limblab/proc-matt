@@ -16,7 +16,7 @@ plotClasses = slidingParams.plotClasses;
 useMasterTunedName = 'movement';
 
 colors = {'k','b','r'};
-doCirc = true;
+doCirc = false;
 
 metricInfo.PD.ymin = 0;
 metricInfo.PD.ymax = 100;
@@ -85,7 +85,7 @@ if doWidthSeparation
         end
     end
     % now, set the threshold for narrow and wide APs
-    wfThresh = median(allWFWidths);
+    wfThresh = mean(allWFWidths);
 end
 
 %%
@@ -98,15 +98,32 @@ for iMonkey = 1:length(monkeys)
         masterTunedSG = cell(size(doFiles,1),1);
         masterTuned = cell(size(doFiles,1),1);
         masterTunedClasses = cell(size(doFiles,1),1);
+        masterTunedDPDs = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
             [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,useMasterTunedName,'regression','onpeak');
             
-            masterTunedSG{iFile} = c.tuned_cells;
-            masterTuned{iFile} = all(c.istuned(:,whichTuned),2);
-            
-            masterTunedClasses{iFile} = c.classes(masterTuned{iFile},2);
-            
+            temp = all(c.istuned(:,whichTuned),2);
+            % check for the weird outlier
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'',doFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            switch lower(t(1).params.exp.angle_dir)
+                case 'ccw'
+                    pertDir = 1;
+                case 'cw'
+                    pertDir = -1;
+            end
+            dpd = pertDir * angleDiff(t(1).pds(:,1),t(4).pds(:,1),true,true);
+%             if any(temp & dpd < -10*pi/180)
+%                 disp('Im gonna remove the weird outlier');
+%                 disp(iFile);
+%                 temp = temp & dpd > -10*pi/180;
+%             end
+%             
             dpd = angleDiff(t(1).pds(:,1),t(4).pds(:,1),true,true);
+            masterTunedSG{iFile} = c.sg(temp,:);
+            masterTuned{iFile} = temp;
+            masterTunedClasses{iFile} = c.classes(masterTuned{iFile},2);
             masterTunedDPDs{iFile} = dpd(masterTuned{iFile});
         end
     end
@@ -248,7 +265,9 @@ for iMonkey = 1:length(monkeys)
         ad_pds = [];
         wo_pds = [];
         
-        tunedDPDs = masterTunedDPDs{iFile};
+        if useMasterTuned
+            tunedDPDs = masterTunedDPDs{iFile};
+        end
         
         bl_neurons = cellPDs{iFile,1};
         ad_neurons = cellPDs{iFile,2};
@@ -324,7 +343,7 @@ for iMonkey = 1:length(monkeys)
         
         % plot them
         if doAbs
-            minnum = 0;
+            minnum = 2;
         else
             minnum = 2;
         end
@@ -370,8 +389,8 @@ for iMonkey = 1:length(monkeys)
                         periodPDs_AD = [periodPDs_AD; circular_mean(dPDs{iFile,1}).*(180/pi)];
                         periodPDs_WO = [periodPDs_WO; circular_mean(dPDs{iFile,2}).*(180/pi)];
                     else
-                        periodPDs_AD = [periodPDs_AD; mean(dPDs{iFile,1}).*(180/pi)];
-                        periodPDs_WO = [periodPDs_WO; mean(dPDs{iFile,2}).*(180/pi)];
+                        periodPDs_AD = [periodPDs_AD; mean(dPDs{iFile,1},1).*(180/pi)];
+                        periodPDs_WO = [periodPDs_WO; mean(dPDs{iFile,2},1).*(180/pi)];
                     end
                 else
                     if doAbs
@@ -389,8 +408,15 @@ for iMonkey = 1:length(monkeys)
             
             periodForce = [periodForce; force];
             periodVel = [periodVel; vel];
+        else
+            disp('Skipping this session!');
         end
     end
+    
+    % remove outliers
+    disp('removing outliers!!!!!');
+    periodPDs_AD(abs(periodPDs_AD) > repmat(3*std(abs(periodPDs_AD),[],1),size(periodPDs_AD,1),1)) = NaN;
+    
     
     
     % fit a regression line
@@ -425,14 +451,14 @@ for iMonkey = 1:length(monkeys)
     subplot1(iMonkey);
     ax1 = gca;
     hold all;
-    plot(1:size(periodPDs_AD,2),mean(periodPDs_AD,1),'-','LineWidth',2,'Color','r','Parent',ax1);
+    plot(1:size(periodPDs_AD,2),nanmean(periodPDs_AD,1),'-','LineWidth',2,'Color','r','Parent',ax1);
     %     plot(1:size(periodPDs_WO,2),mean(periodPDs_WO,1),'-','LineWidth',2,'Color','b','Parent',ax1);
     %     if iMonkey == 2
     %         legend({'Adaptation','Washout'},'FontSize',14);
     %     end
     
-    plot(1:size(periodPDs_AD,2),mean(periodPDs_AD,1),'o','LineWidth',2,'Color','r','Parent',ax1);
-    plot([1:size(periodPDs_AD,2);1:size(periodPDs_AD,2)],[mean(periodPDs_AD,1)+std(periodPDs_AD,1)/sqrt(size(periodPDs_AD,1));mean(periodPDs_AD,1)-std(periodPDs_AD,1)/sqrt(size(periodPDs_AD,1))],'LineWidth',2,'Color','r','Parent',ax1)
+    plot(1:size(periodPDs_AD,2),nanmean(periodPDs_AD,1),'o','LineWidth',2,'Color','r','Parent',ax1);
+    plot([1:size(periodPDs_AD,2);1:size(periodPDs_AD,2)],[nanmean(periodPDs_AD,1)+nanstd(periodPDs_AD,1)/sqrt(size(periodPDs_AD,1));nanmean(periodPDs_AD,1)-nanstd(periodPDs_AD,1)/sqrt(size(periodPDs_AD,1))],'LineWidth',2,'Color','r','Parent',ax1)
     %     plot(1:size(periodPDs_WO,2),mean(periodPDs_WO,1),'o','LineWidth',2,'Color','b','Parent',ax1);
     %     plot([1:size(periodPDs_WO,2);1:size(periodPDs_WO,2)],[mean(periodPDs_WO,1)+std(periodPDs_WO,1)/sqrt(size(periodPDs_WO,1));mean(periodPDs_WO,1)-std(periodPDs_WO,1)/sqrt(size(periodPDs_WO,1))],'LineWidth',2,'Color','b','Parent',ax1)
     

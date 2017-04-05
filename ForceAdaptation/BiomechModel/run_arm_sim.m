@@ -37,12 +37,13 @@ for iFile = 1:length(filenames)
 
     iFile
     
-    dataDir = fullfile(rootDir,TDDir);
+%     dataDir = fullfile(rootDir,TDDir);
+dataDir = fullfile(rootDir,'results','m1_cf_JNS_results','trial_data_format');
     
     outDir = fullfile(rootDir,resultsDir,'biomech_model');
     do_sim = true; %if false just redo tuning and use old model
-    do_neurons = false;
-    do_tuning = false;
+    do_neurons =true;
+    do_tuning = true;
     
     do_sliding_window_bullshit = false;
     tune_real_neurons = false;
@@ -56,7 +57,7 @@ for iFile = 1:length(filenames)
     
     %%%%%%%%%%%%%%% PARAMETERS %%%%%%%%%%%%%%%%%%%
     pos_offset = [1,-31]; % position offset from behavior
-    origin_pos = [15 25];
+    origin_pos = [6 30];
     dt = 0.01;
     
     %%% biomech model
@@ -99,7 +100,7 @@ for iFile = 1:length(filenames)
     use_muscle_model = 'all'; %'single','joint','synergy','all'
     weight_distribution = 'gaussian'; %'uniform','gaussian','skewgauss'
     mean_lag = 10; % mean lag in bins, that spikes will be shifted before tuning
-    std_lag = 5; % how many bins of standard deviation
+    std_lag = 3; % how many bins of standard deviation
     
     if tune_real_neurons
         mean_lag = 10;
@@ -114,23 +115,23 @@ for iFile = 1:length(filenames)
         'num_neurons',num_neurons,'muscle_gains',muscle_gains,'use_muscle_model',use_muscle_model,'mean_lag',mean_lag,'std_lag',std_lag, ...
         'simple_muscle_model',simple_muscle_model,'weight_distribution',weight_distribution,'left_arm',left_arm);
     
-    if isfield(trial_data(1),'result')
+    if isfield(trial_data,'result')
         trial_data = trial_data(getTDidx(trial_data,'result','R'));
     end
     
     %trial_data = trial_data(getTDidx(trial_data,'epoch','BL'));
-        
-    
-    disp('Doing weird baseline copy thing')
-    temp_bl = trial_data(getTDidx(trial_data,'epoch','BL'));
-    temp_ad = trial_data(getTDidx(trial_data,'epoch','BL'));
-    temp_wo = trial_data(getTDidx(trial_data,'epoch','BL'));
-    for i = 1:length(temp_bl)
-        temp_ad(i).epoch = 'AD';
-        temp_wo(i).epoch = 'WO';
-    end
-    trial_data = [temp_bl,temp_ad,temp_wo]; clear temp_bl temp_ad temp_wo;
-    
+%         
+%     
+%     disp('Doing weird baseline copy thing')
+%     temp_bl = trial_data(getTDidx(trial_data,'epoch','BL'));
+%     temp_ad = trial_data(getTDidx(trial_data,'epoch','BL'));
+%     temp_wo = trial_data(getTDidx(trial_data,'epoch','BL'));
+%     for i = 1:length(temp_bl)
+%         temp_ad(i).epoch = 'AD';
+%         temp_wo(i).epoch = 'WO';
+%     end
+%     trial_data = [temp_bl,temp_ad,temp_wo]; clear temp_bl temp_ad temp_wo;
+%     
     if do_sim
         % do modeling
         disp('Calculating kinematics and dynamics...');
@@ -138,7 +139,7 @@ for iFile = 1:length(filenames)
         arm_sim_muscles;
 
         % save data
-        save(fullfile(outDir,[filenames{iFile} '_sim.mat']),'sim_data','params');
+        save(fullfile(outDir,[filenames{iFile} '_sim.mat']),'sim_data','params','-v7.3');
     end
     
     if do_neurons
@@ -149,7 +150,7 @@ for iFile = 1:length(filenames)
         arm_sim_neurons;
 
         % save data
-        save(fullfile(outDir,[filenames{iFile} '_neurons.mat']),'sim_data','neural_tcs','params');
+        save(fullfile(outDir,[filenames{iFile} '_neurons.mat']),'sim_data','neural_tcs','params','-v7.3');
         
     end
     
@@ -159,13 +160,13 @@ for iFile = 1:length(filenames)
         
         arm_sim_tuning;
         
-        save(fullfile(outDir,[filenames{iFile} '_tuning.mat']),'sw_data','tc_data','params');
+        save(fullfile(outDir,[filenames{iFile} '_tuning.mat']),'sw_data','tc_data','params','-v7.3');
         
     end
 end
 
 %% Plot the simulation
-if 1
+if 0
     %     clear params;
     close all;
     %     params.dt = dt;
@@ -183,8 +184,8 @@ if 1
     %     params.num_neurons = num_neurons;
     %     params.comp_blocks = [1 2 3];
     %
-    params.type = 'time_signals';
-%             params.type = 'freeze_video';
+%     params.type = 'time_signals';
+            params.type = 'freeze_video';
     params.resolution = 5;
     params.signals = {'vel','torques','muscles','muscle_neurons'};
     params.kin_model = 'real';
@@ -202,7 +203,9 @@ if 1
 %     [~,I] = sort(cellfun(@(x) max(max(x)) - min(min(x)),{sim_data(idx).torques},'Uni',1),2,'ascend');
 %     idx = idx(I);
 
-idx = [58,348];
+idx = 1:10;
+
+[~,trial_data] = getTDidx(trial_data,'result','R');
     
     for iTrial = idx
         iTrial

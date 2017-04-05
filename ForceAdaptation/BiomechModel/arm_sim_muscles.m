@@ -2,7 +2,7 @@ cf_count = 0;
 for iTrial = 1:length(trial_data)
     
     if strcmpi(trial_data(iTrial).epoch,'AD')
-        K = 0.1*trial_data(iTrial).perturbation_info(1); % curl field constant
+        K = trial_data(iTrial).perturbation_info(1); % curl field constant
     else
         K = 0;
     end

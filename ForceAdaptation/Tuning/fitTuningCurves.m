@@ -39,7 +39,7 @@ function fitTuningCurves(params,arrays)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-procDirName = 'Processed';
+procDirName = '';
 doPlots = false;
 
 if nargin < 2

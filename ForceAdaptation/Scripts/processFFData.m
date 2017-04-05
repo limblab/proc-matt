@@ -17,7 +17,7 @@ clc;
 dataRoot = 'F:\results\m1_cf_JNS_results\';
 procDirName = '';
 monkeys = {'Chewie','Mihili'};
-paramSetNames = {'movement'};
+paramSetNames = {'target'};
 
 % exclude these analysis steps
 % processing options
@@ -25,7 +25,7 @@ doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
-doTuning            = 0;
+doTuning            = 1;
 doClassification    = 1;
 doReport            = 0;
 % plotting options

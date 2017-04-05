@@ -1,31 +1,28 @@
 clc; close all; clearvars -except ANALYSIS_NAME;
-ANALYSIS_NAME = 'PMdM1_glm_DECENT';
 dataSummary;
-load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,'start_params.mat'));
 
 ANALYSIS_NAME = 'PMdM1_glm_DECENT';
+load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,'start_params.mat'),'filenames');
+ANALYSIS_NAME = 'PMdM1_glm_DECENT';
+%filenames = filenames(cellfun(@(x) ~isempty(strfind(x,'Mihili')) | ~isempty(strfind(x,'Chewie')),filenames));
 
-fns = filenames(cellfun(@(x) ~isempty(strfind(x,'_FF_')),filenames));
+task = 'FF';
+models = {'pmd'};
+which_metric = 'rpr2'; %'rpr2','pr2'
 
-which_metric = 'rpr2';
+bin_size = 0.05;
 
 test_trials = {'AD',[1 10],[71,80]};
-cv_trials = {'AD',[81 90]};
-min_r2 = 0.0;
-min_fr = 0;
-r2_op = 'mean';
+min_r2 = 0;
 
-do_diff = true;
-do_norm = true;
-rem_outliers = true;
-models = {'pmd'};
+do_diff = false;
+do_norm = false;
+rem_outliers = false;
 
-num_boots = 1000;
 
 results = repmat(struct('good_cells',[],'cv',[],'pr2',[]),1,length(models));
 for iModel = 1:length(models)
-    
-    LearningGLM_CrossValidate;
+    fns = filenames(cellfun(@(x) ~isempty(strfind(x,['_' task '_'])),filenames));
     
     [r2] = deal([]);
     for iFile = 1:length(fns)
@@ -63,29 +60,38 @@ for iModel = 1:length(models)
         r2 = [r2, cat(1,r2_e,r2_l)];
     end
     
+        
+    
+    
+    % get the values for each test trial
+    [cv_ref,cv_basic] = deal([]);
+    for iFile = 1:length(fns)
+        load(fullfile(rootDir,resultsDir,ANALYSIS_NAME,[fns{iFile} '_cv.mat']),'cv_results');
+        temp = cv_results.([models{iModel}]).(which_metric);
+        if size(temp,3) > 1
+            temp = squeeze(mean(temp,3));
+        end
+        cv_ref = cat(1,cv_ref,temp);
+        
+        temp = cv_results.basic.pr2;
+        if size(temp,3) > 1
+            temp = squeeze(mean(temp,3));
+        end
+        cv_basic = cat(1,cv_basic,temp);
+    end
+    
     % get the good cells
-    good_cells = true(size(r2,2),1);
-    fr_cells = fr_cv > min_fr & fr_test > min_fr;
-    good_cells = good_cells & fr_cells;
+    good_cells = min(cv_ref,[],2) > min_r2;
+    cv_ref = mean(cv_ref,2);
+    cv_basic = mean(cv_basic,2);
     
-    switch lower(r2_op)
-        case 'min'
-            cv_ref = cv_ref(:,1);
-            if strcmpi(which_metric,'rpr2')
-                cv_basic = cv_basic(:,1);
-            end
-        case 'mean'
-            cv_ref = mean(cv_ref,2);
-            if strcmpi(which_metric,'rpr2')
-                cv_basic = mean(cv_basic,2);
-            end
-    end
-    good_cells = good_cells & cv_ref > min_r2;
-    if strcmpi(which_metric,'rpr2')
-        good_cells = good_cells & cv_basic > min_r2;
-    end
+    disp(['Total good cells: ' num2str(sum(good_cells)) ' / ' num2str(length(good_cells))]);
+    disp(['CV pR2: ' num2str(mean(cv_ref(good_cells))) ' +/- ' num2str(std(cv_ref(good_cells)))]);
     
-    disp(['Total good cells: ' num2str(sum(good_cells)) ' / ' num2str(length(good_cells) - sum(~fr_cells)) ' (' num2str(length(good_cells)) ')']);
+    
+    
+    
+
     
     if do_diff
         r2 = r2 - repmat(cv_ref',2,1);
@@ -98,7 +104,7 @@ for iModel = 1:length(models)
     
     if rem_outliers
         r2(abs(r2) > 1e5) = NaN;
-        num_std = 3;
+        num_std = 10;
         %bad_idx = abs(r2) > repmat(num_std*std(r2,[],2),1,size(r2,2));
         bad_idx = abs(r2) > num_std*nanstd(reshape(r2,numel(r2),1));
         r2(bad_idx) = NaN;
@@ -106,7 +112,6 @@ for iModel = 1:length(models)
     
     x_min = min(nanmin(r2));
     x_max = max(nanmax(r2));
-    bin_size = 0.02;
     bins = x_min:bin_size:x_max;
     
     [~,p] = ttest2(r2(1,:),r2(2,:));

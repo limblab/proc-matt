@@ -8,24 +8,24 @@ sessions = { ...
     'Chewie','2016-10-05'; ...
     'Chewie','2016-10-07'; ...
     'Chewie','2016-10-11'; ...
-    'Mihili','2014-02-03'; ...
-    'Mihili','2014-02-17'; ...
-    'Mihili','2014-02-18'; ...
-    'Mihili','2014-03-07'; ...
-    'Chewie','2016-09-09'; ... % VR
-    'Chewie','2016-09-12'; ...
-    'Chewie','2016-09-14'; ...
-    'Chewie','2016-10-06'; ...
-    'Mihili','2014-03-03'; ...
-    'Mihili','2014-03-04'; ...
-    'Mihili','2014-03-06'; ...
+        'Mihili','2014-02-03'; ...
+        'Mihili','2014-02-17'; ...
+        'Mihili','2014-02-18'; ...
+        'Mihili','2014-03-07'; ...
+        'Chewie','2016-09-09'; ... % VR
+        'Chewie','2016-09-12'; ...
+        'Chewie','2016-09-14'; ...
+        'Chewie','2016-10-06'; ...
+        'Mihili','2014-03-03'; ...
+        'Mihili','2014-03-04'; ...
+        'Mihili','2014-03-06'; ...
     };
 
-basenames = {'trainad'};
-extranames = {'singleneurons'};
-array_models = {'M1-M1'};
+basenames = {'trainad','trainad','trainad',};
+extranames = {'singleneurons_v2','singleneurons_v2','singleneurons_v2'};
+array_models = {'M1-M1','PMd-PMd','PMd-M1'};
 
-do_the_plots = false; % will pot neuron examples
+do_the_plots = false; % will plot neuron examples
 
 pert            = 'FF';
 tasks           = {'CO'};
@@ -33,23 +33,23 @@ dates           = sessions(:,2);
 monkeys         = unique(sessions(:,1));
 
 % last one is "cross validated" one
-test_trials = {'AD',[1,10], [71,80]};
+test_trials = {'AD',[1,10], [51,60]};
 num_bootstraps = 0;
 
 which_metric    = 'rpr2'; % 'rpr2','pr2_full','pr2_basic'
 pr2_cutoff      =  0.0;
 pr2_op          = 'min'; % which operation for filtering ('min','max','mean','median')
-min_fr          = 0.15;
-basic_pr2_check = false;
+min_fr          = 0;
+basic_pr2_check = true;
 
-n_bins = 15;
+bin_size = 0.025;
 do_diff = false;
 do_norm = false;
 
-rem_outliers = false;
-num_std = 10;
+rem_outliers = true;
+num_std = 3;
 only_high_fr_cells = false;
-only_good_late_cells = false;
+only_good_late_cells = true;
 plot_diff = false;
 
 session_idx = ismember(filedb.Monkey,monkeys) & ismember(filedb.Perturbation,pert) & ismember(filedb.Task,tasks) & ismember(filedb.Date,dates);
@@ -209,7 +209,8 @@ for i = 1:length(plot_out)
     x_min = min([x_min, plot_out(i).x_lim(1)]);
     x_max = max([x_max, plot_out(i).x_lim(2)]);
 end
-bins = x_min:(x_max-x_min)/n_bins:x_max;
+
+bins = x_min:bin_size:x_max;
 
 %%
 figure;
@@ -233,8 +234,8 @@ for i = 1:length(plot_out)
         set(h,'FaceColor','r');
         hist(r2_l(good_cells),bins);
         h = findobj(gca,'Type','patch');
-        set(h,'EdgeColor','w','FaceAlpha',0.7,'EdgeAlpha',0.7);
-        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[x_min,x_max]);
+        set(h,'EdgeColor','w');%,'FaceAlpha',0.7,'EdgeAlpha',0.7);
+        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[x_min-bin_size/2,x_max+bin_size/2]);
         [~,p] = ttest2(r2_l(good_cells),r2_e(good_cells));
         title(p);
         
@@ -256,4 +257,33 @@ for i = 1:length(plot_out)
     
 end
 xlabel('relative pseudo-R2');
+
+
+% %% Now make a bar graph summarizing the effect
+% figure; hold all;
+% % m = zeros(1,length(plot_out));
+% % s = zeros(2,length(plot_out));
+% clear s;
+% for i = 1:length(plot_out)
+%     r2_e = plot_out(i).r2_e;
+%     r2_l = plot_out(i).r2_l;
+%     cv = plot_out(i).cv;
+%     good_cells = plot_out(i).good_cells;
+%     
+%     val = (cv(good_cells)-r2_e(good_cells))./cv(good_cells);
+%     m = mean(val);
+%     s(1) = m - std(val)./sqrt(sum(good_cells));
+%     s(2) = m + std(val)./sqrt(sum(good_cells));
+%     plot([i,i],s,'r-','LineWidth',2);
+%     plot(i,m,'ro','LineWidth',2);
+%     
+%     val = (cv(good_cells)-r2_l(good_cells))./cv(good_cells);
+%     m = mean(val);
+%     s(1) = m - std(val)./sqrt(sum(good_cells));
+%     s(2) = m + std(val)./sqrt(sum(good_cells));
+%     plot([i+0.1,i+0.1],s,'b-','LineWidth',2);
+%     plot(i+0.1,m,'bo','LineWidth',2);
+% end
+% V = axis;
+% plot(V(1:2),[0 0],'k--');
 

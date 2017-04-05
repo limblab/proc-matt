@@ -156,7 +156,7 @@ switch lower(sigTest{1})
         boot_mds = b1s;
         boot_bos = b0s;
         
-        pds = circ_mean(b2s')';
+        pds = circular_mean(b2s')';
         % Build vector of distances from mean for each channel
         ang_dist = boot_pds-pds(:,ones(1,numIters));
         ang_dist(ang_dist>pi) = ang_dist(ang_dist>pi)-2*pi;

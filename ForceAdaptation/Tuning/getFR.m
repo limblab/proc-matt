@@ -100,6 +100,7 @@ for iBlock = 1:numBlocks
     %% Now get direction for tuning
     if strcmpi(tuneDir,'target')
         theta = mt(:,1);
+        theta_hand = NaN(size(theta));
     elseif strcmpi(tuneDir,'movement')
         if strcmpi(tuningPeriod,'pre') || strcmpi(tuningPeriod,'time0') % in this case, use target direction
             theta = mt(:,1);
@@ -176,7 +177,7 @@ for iBlock = 1:numBlocks
     % theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)
     
     if doBinAngles % put in bins for regression
-        theta = binAngles(theta,angleBinSize);
+        theta = bin_angles(theta,angleBinSize);
     end
     
     outFR{iBlock} = fr;
